@@ -1,0 +1,9 @@
+bacnet-client.js
+
+processUnconfirmedServiceRequest 230行左右
+记录 iAm whoIs whoHas timeSync timeSyncUTC eventNotify 事件的接收
+
+bacnet-services.js
+
+decodeIamBroadcast 11行 左右
+解析 iAm 广播

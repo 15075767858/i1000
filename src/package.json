@@ -1,0 +1,14 @@
+{
+    "name": "SmartIO i1000 Quick builder",
+    "main": "views/index.html",
+    "version": "1.0.0",
+    "window": {
+        "min_width": 1024,
+        "min_height": 768,
+        "icon": "assets/SmartIO.png"
+    },
+    "devDependencies": {
+        "nw-builder":"^3.4.1",
+        "nw": "^0.25.2"
+    }
+}

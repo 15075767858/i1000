@@ -1,0 +1,25 @@
+{
+  "name": "i1000",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "bacnet": "node src/app/bacnet.js",
+    "server":"node src/app/server.js",
+    "start": "nw",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nw  src/",
+    "prod": "nwbuild --platforms win64  --buildDir dist/ src/ && \"E:/i1000/dist/SmartIO i1000 Quick builder/win64/SmartIO i1000 Quick builder.exe\"",
+    "debug": "nw --remote-debugging-port=9222"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {},
+  "dependencies": {
+    "bacstack": "0.0.1-beta.10",
+    "express": "^4.16.2",
+    "jsonfile": "^4.0.0",
+    "redis": "^2.8.0",
+    "thing-it-device-bacnet": "^0.1.4"
+  }
+}
