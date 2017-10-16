@@ -6,9 +6,12 @@ Ext.define("ConfigBACnet", {
     height: 630,
     resizeable: false,
     layout: 'card',
+    id: "ConfigBACnet",
     viewModel: {
         data: {
             whoisDelay: 2,
+            selectDevices: [],
+            currentDevice: 0,
             page2: [
 
             ]
@@ -52,7 +55,6 @@ Ext.define("ConfigBACnet", {
         if (i == 0 & incr == 1) {
             me.layout.next()
             me.down('#card-next').setDisabled(true)
-
             var store = Ext.StoreManager.lookup("WhoIsDevices");
             Ext.Ajax.request({
                 async: true,
@@ -63,18 +65,25 @@ Ext.define("ConfigBACnet", {
                     console.log(arguments)
                     me.layout.next()
                     me.down('#card-prev').setDisabled(false);
-                    me.down('#card-next').setDisabled(false)
+                    me.down('#card-next').setDisabled(true)
                 },
                 failure: function (response) {
-                    alert("failure")
+                    alert("load data failure ,please retry.")
                     console.log(arguments)
                 }
             })
+        } else if (i == 3 & incr == 1) {
+            var checkVaues = l.activeItem.down("form").getValues();
+            console.log(checkVaues)
+            var selectDevices = me.viewModel.get("selectDevices");
+            console.log(selectDevices)
+            l.setActiveItem(next);
         } else {
             l.setActiveItem(next);
             me.down('#card-prev').setDisabled(next === 0);
             me.down('#card-next').setDisabled(next === 7);
         }
+
         console.log(next)
 
         //win.down("#whoisDelay").value
@@ -116,6 +125,8 @@ Ext.define("ConfigBACnet", {
                         itemId: "whoisDelay",
                         fieldLabel: "second(s)",
                         xtype: "numberfield",
+                        maxValue: 10,
+                        minValue: 2
                     }
                 }
                 ]
@@ -163,19 +174,35 @@ Ext.define("ConfigBACnet", {
             items: [{
                 xtype: "button",
                 text: "Select All",
+                handler: function () {
+                    this.up("window").down("#WhoIsDeviceGrid").selModel.selectAll()
+                }
             },
             {
                 xtype: "button",
-                text: "Select None"
+                text: "Select None",
+                handler: function () {
+                    this.up("window").down("#WhoIsDeviceGrid").selModel.deselectAll()
+                }
             }
             ]
         },
         {
             region: "center",
             xtype: "grid",
+            itemId: "WhoIsDeviceGrid",
             // selModel: {
             //     type: 'checkboxmodel',
             // },
+            listeners: {
+                selectionchange: function (check, selected, eOpts) {
+                    var win = this.up("window");
+                    win.down('#card-next').setDisabled(!selected.length);
+                    win.viewModel.set("selectDevices", selected)
+                    console.log(this)
+                    console.log(arguments)
+                }
+            },
             selType: 'checkboxmodel',
             store: {
                 storeId: "WhoIsDevices",
@@ -358,13 +385,15 @@ Ext.define("ConfigBACnet", {
                 },
                 items: [{
                     border: 0,
-                    html: ["<h1>BACnet discovery complete</h1>",
-                        "<h5>Summary statistics</h5>",
-                        "Discovering BACnet device            <strong>  2 of 2 </strong>",
-                        "<br>",
-                        "Objects discovered for current device:<strong> 0 </strong>",
-                        "<br>"
-                    ].join("<br>"),
+                    bind: {
+                        html: ["<h1>BACnet discovery complete</h1>",
+                            "<h5>Summary statistics</h5>",
+                            "Discovering BACnet device            <strong>  {currentDevice} of { selectDevices.length } </strong>",
+                            "<br>",
+                            "Objects discovered for current device:<strong> {currentDevice} </strong>",
+                            "<br>"
+                        ].join("<br>"),
+                    }
                 },
                 {
                     xtype: "fieldset",
@@ -372,20 +401,43 @@ Ext.define("ConfigBACnet", {
                     title: 'WhoIs Delay',
                     items: {
                         xtype: "grid",
+
                         store: {
                             fields: ['step', 'status'],
-                            storeId: "discoverStore"
+                            storeId: "discoverStore",
+                            data: [
+                                { step: "Get existing project devices", status: 1 },
+                                { step: "Get existing project object", status: 1 },
+                                { step: "{device_name}:Adding device to project", status: 0.7 },
+                                { step: "{device_name}:Discovering object properties", status: 0.8 }
+                            ]
                         },
                         columns: [
+                            {
+                                width: 50,
+                                renderer: function () {
+                                    return "<img  src=../assets/yes_ok.png>"
+                                },
+                            },
                             {
                                 text: 'Discovery Step',
                                 dataIndex: 'step',
                                 sortable: false,
+                                flex: 1
                             },
                             {
                                 text: 'Status',
                                 dataIndex: 'status',
                                 sortable: false,
+                                width: 88,
+                                xtype: 'widgetcolumn',
+                                widget: {
+                                    xtype: 'progressbarwidget',
+                                    // bind: '{record.capacityUsed}',
+                                    textTpl: [
+                                        '{percent:number("0")}%'
+                                    ]
+                                }
                             }
                         ]
                     }
