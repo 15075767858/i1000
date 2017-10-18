@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<device  address="192.168.253.253" instance="1031" net="1100" adr="31" ip="192.168.253.253">
+    <Object_Name>Controller</Object_Name>
+    <point type="0" instance="1">
+        
+    </point>
+    <point type="0" instance="2">
+        
+    </point>
+    <point type="0" instance="3">
+        
+    </point>
+    <point type="0" instance="4">
+        
+    </point>
+    
+</device>

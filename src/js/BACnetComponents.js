@@ -75,8 +75,24 @@ Ext.define("ConfigBACnet", {
         } else if (i == 3 & incr == 1) {
             var checkVaues = l.activeItem.down("form").getValues();
             console.log(checkVaues)
+            var propertys = []
+            for (var value in checkVaues) {
+                if (checkVaues[value] == "on") {
+                    propertys.push(value);
+                }
+            }
             var selectDevices = me.viewModel.get("selectDevices");
+            var deivces = [];
+            for (var i = 0; i < selectDevices.length; i++) {
+                deivces.push(selectDevices[i].data.instance)
+            }
             console.log(selectDevices)
+            Ext.Ajax.request({
+                url: "http://127.0.0.1:2018/generateBACnetXml",
+                method: "get",
+                params: { propertys: propertys, deivces: deivces }
+            })
+            
             l.setActiveItem(next);
         } else {
             l.setActiveItem(next);
@@ -396,51 +412,47 @@ Ext.define("ConfigBACnet", {
                     }
                 },
                 {
-                    xtype: "fieldset",
-                    columnWidth: 0.5,
-                    title: 'WhoIs Delay',
-                    items: {
-                        xtype: "grid",
+                    xtype: "grid",
 
-                        store: {
-                            fields: ['step', 'status'],
-                            storeId: "discoverStore",
-                            data: [
-                                { step: "Get existing project devices", status: 1 },
-                                { step: "Get existing project object", status: 1 },
-                                { step: "{device_name}:Adding device to project", status: 0.7 },
-                                { step: "{device_name}:Discovering object properties", status: 0.8 }
-                            ]
-                        },
-                        columns: [
-                            {
-                                width: 50,
-                                renderer: function () {
-                                    return "<img  src=../assets/yes_ok.png>"
-                                },
-                            },
-                            {
-                                text: 'Discovery Step',
-                                dataIndex: 'step',
-                                sortable: false,
-                                flex: 1
-                            },
-                            {
-                                text: 'Status',
-                                dataIndex: 'status',
-                                sortable: false,
-                                width: 88,
-                                xtype: 'widgetcolumn',
-                                widget: {
-                                    xtype: 'progressbarwidget',
-                                    // bind: '{record.capacityUsed}',
-                                    textTpl: [
-                                        '{percent:number("0")}%'
-                                    ]
-                                }
-                            }
+                    store: {
+                        fields: ['step', 'status'],
+                        storeId: "discoverStore",
+                        data: [
+                            { step: "Get existing project devices", status: 1 },
+                            { step: "Get existing project object", status: 1 },
+                            { step: "{device_name}:Adding device to project", status: 0.7 },
+                            { step: "{device_name}:Discovering object properties", status: 0.8 }
                         ]
-                    }
+                    },
+                    columns: [
+                        {
+                            width: 50,
+                            renderer: function () {
+                                return "<img  src=../assets/yes_ok.png>"
+                            },
+                        },
+                        {
+                            text: 'Discovery Step',
+                            dataIndex: 'step',
+                            sortable: false,
+                            flex: 1
+                        },
+                        {
+                            text: 'Status',
+                            dataIndex: 'status',
+                            sortable: false,
+                            width: 88,
+                            xtype: 'widgetcolumn',
+                            widget: {
+                                xtype: 'progressbarwidget',
+                                // bind: '{record.capacityUsed}',
+                                textTpl: [
+                                    '{percent:number("0")}%'
+                                ]
+                            }
+                        }
+                    ]
+
                 }
                 ]
             },

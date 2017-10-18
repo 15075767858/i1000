@@ -12,7 +12,11 @@ app.get("/getWhoIsDevices", function (req, res) {
         res.send(data)
     })
 })
-
+app.get("/generateBACnetXml", function (req, res) {
+   var propertys = req.query.propertys;
+   var deivces = req.query.deivces;
+   console.log(propertys,deivces)
+})
 var server = app.listen(config.getServerPort(), function () {
     var host = server.address().address
     
