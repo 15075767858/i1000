@@ -8,7 +8,12 @@
         "icon": "assets/SmartIO.png"
     },
     "devDependencies": {
-        "nw-builder":"^3.4.1",
-        "nw": "^0.25.2"
+        "nw-builder": "^3.4.1",
+        "nw": "^0.25.2",
+        "express": "^4.16.2",
+        "jsonfile": "^4.0.0",
+        "redis": "^2.8.0",
+        "xml2js": "^0.4.19",
+        "xmlbuilder": "^9.0.4"
     }
 }

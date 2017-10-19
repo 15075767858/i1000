@@ -1,5 +1,48 @@
 var bacnetenum = require('./bacstack/index').enum;
 var benum = require('./bacstack/lib/bacnet-enum');
+var xmlbuilder = require("xmlbuilder");
+var bacnetdevice = require("./bacnet-device")
+var fs = require('fs-extra')
+
+// var propertys = ['OBJECT_ACCUMULATOR', 'OBJECT_ANALOG_INPUT', 'OBJECT_ANALOG_OUTPUT', 'OBJECT_ANALOG_VALUE', 'OBJECT_AVERAGING', 'OBJECT_BINARY_INPUT', 'OBJECT_BINARY_OUTPUT', 'OBJECT_BINARY_VALUE', 'OBJECT_CALENDAR', 'OBJECT_COMMAND', 'OBJECT_EVENT_ENROLLMENT', 'OBJECT_FILE', 'OBJECT_GROUP', 'OBJECT_LOOP', 'OBJECT_LIFE_SAFETY_POINT', 'OBJECT_LIFE_SAFETY_ZONE', 'OBJECT_MULTI_STATE_INPUT', 'OBJECT_MULTI_STATE_OUTPUT', 'OBJECT_MULTI_STATE_VALUE', 'OBJECT_NOTIFICATION_CLASS', 'OBJECT_PROGRAM', 'OBJECT_PULSE_CONVERTER', 'OBJECT_SCHEDULE', 'OBJECT_TRENDLOG'];
+// var devices = ["1103", "1031"];
+// generateBACnetXml(null, devices, propertys, function (err, id, message, status) {
+//     console.log(arguments)
+// })
+
+function generateBACnetXml(root, devices, propertys, callback) {
+    console.log("generateBACnetXml")
+    var xmlFile = "/mnt/nandflash/facilty/";
+    fs.ensureDir(xmlFile, (err) => {
+        console.log(err)
+    })
+    for (var i = 0; i < devices.length; i++) {
+        devices[i] = devices[i] + ""
+    }
+    if (!root) {
+        root = xmlbuilder.create("root");
+    }
+    var device = devices.pop();
+    if (device) {
+        callback(null, "device_" + device.deviceId, " Add deivce to project", 1)
+        new bacnetdevice.BACnetDevice(device, function (err, bacnetdevice) {
+            if (err) {
+                callback(err)
+                return;
+            }
+            bacnetdevice.setRoot(root).generateBACnetXml(propertys, function (err, id, message, status) {
+                console.log(arguments)
+                generateBACnetXml(root, devices, propertys, callback)
+                callback(err, id, message, status)
+            })
+        })
+    } else {
+        var xml = root.end({ pretty: true }).toString()
+        fs.writeFileSync(xmlFile + "BACnetConfig.xml", xml)
+    }
+}
+
+exports.generateBACnetXml = generateBACnetXml;
 function readAllProertys(result) {
 
     var propertys = ['OBJECT_ACCUMULATOR',
@@ -31,17 +74,59 @@ function readAllProertys(result) {
     console.log(Object_List)
     //bacnetenum.BacnetPropertyIds
 }
-function BACnetIAm(client, deviceId, callback) {
+function readObjectInfoAll(client, address, instance, objectType, callback) {
+
+    readObjectInfo(client, address, instance, objectType, bacnetenum.BacnetPropertyIds.PROP_ALL, function (err, result) {
+        if (err) {
+            callback(err, null);
+            return;
+        }
+        var resObj = {}
+        for (var property in bacnetenum.BacnetPropertyIds) {
+            var id = bacnetenum.BacnetPropertyIds[property];
+            var res = searchProperty(result, id)
+            //console.log(id, property, res)
+            if (!(res === undefined || res === null)) {
+                resObj[property] = res
+            }
+        }
+        //console.log(resObj)
+        callback(null, resObj);
+    })
+}
+exports.readObjectInfoAll = readObjectInfoAll;
+function readObjectInfo(client, device, instance, objectType, propertyIdentifier, callback) {
+    var address = device.address;
+    if (device.npdu) {
+        if (device.npdu.source) {
+            address = { address: device.address, net: device.npdu.source.net, adr: device.npdu.source.adr };
+        }
+    }
+    var requestArray = [{
+        objectIdentifier: {
+            type: objectType, //AI AO AV BI BO BV 
+            instance: instance //实例号
+        },
+        propertyReferences: [{
+            propertyIdentifier: propertyIdentifier
+        }]
+    }];
+    client.readPropertyMultiple(address, requestArray, callback);
+}
+exports.readObjectInfo = readObjectInfo;
+function BACnetIAm(client, deviceIds, callback) {
     var devices = [];
     client.whoIs()
     client.on('iAm', function (device) {
-        
-        if (devices.indexOf(device.deviceId) < 0) {
+        if (devices.includes(device.deviceId) == false) {
             devices.push(device.deviceId);
-            if (!deviceId) {
-                
-                callback(device);
-            } else if (device.deviceId == deviceId) {
+            if (deviceIds) {
+                for (var i = 0; i < deviceIds.length; i++) {
+                    if (deviceIds[i] - device.deviceId == 0) {
+                        callback(device)
+                    }
+                }
+            } else {
                 callback(device);
             }
         }
@@ -63,8 +148,6 @@ function readPropertyInstanceByObjectType(result, Object_Type) {
             resArr.push(instance);
         }
     }
-    console.log(Object_List, resArr)
-
     return resArr
 
 }
@@ -140,6 +223,8 @@ function searchProperty(result, propertyIdentifier) {
                 case BacnetPropertyIds.PROP_LIMIT_ENABLE:
                     return PROP_LIMIT_ENABLE(arr[i])
                 case BacnetPropertyIds.PROP_STATUS_FLAGS:
+                    return PROP_STATUS_FLAGS(arr[i])
+                case BacnetPropertyIds.PROP_ACK_REQUIRED:
                     return PROP_STATUS_FLAGS(arr[i])
                 case BacnetPropertyIds.PROP_ACKED_TRANSITIONS:
                     return null;

@@ -1,84 +1,140 @@
 var bacnet = require('./bacstack/index');
 var bacnetenum = require("./bacstack/lib/bacnet-enum");
-var bacnetutil = require("./bacnetutil")
+var bacnetutil = require("./bacnetutil");
+var bacnetdevice = require("./bacnet-device")
 var xml2js = require("xml2js");
 var fs = require("fs");
-test()
-function test() {
+var xmlbuilder = require("xmlbuilder");
+
+
+//test2(root, devices, propertys, 3000)
+function test2(root, devices, propertys, adpuTimeout, callback) {
+    var device = devices.pop();
+    if (device) {
+        device = [device]
+        generateBACnetXml(root, adpuTimeout, devices, propertys, function () {
+            console.log(arguments)
+            console.log(devices)
+            test2(root, devices, propertys, adpuTimeout, callback)
+        })
+    }
+}
+
+function generateBACnetXml(root, adpuTimeout, devices, propertys, callback) {
 
     var client = new bacnet({
-        adpuTimeout: 10000
+        adpuTimeout: adpuTimeout || 10000
     });
-    client.whoIs()
-    bacnetutil.BACnetIAm(client, 1031, function (device) {
+    bacnetutil.BACnetIAm(client, devices, function (device) {
         console.log(device)
-        readObjectInfo(client, device, device.deviceId, 8, 8, function (err, result) {
-            if (err) {
-                console.log(err)
-                return
-            }
-            var Property_Name = "OBJECT_ANALOG_INPUT";
-            var Object_Type = bacnetenum.BacnetObjectTypes[Property_Name]
-            var resArr = bacnetutil.readPropertyInstanceByObjectType(result, Object_Type)
-
-            for (let i = 0; i < resArr.length; i++) {
-                readObjectInfoAll(client, device, resArr[i], Object_Type, function (err, res) {
-                    console.log(arguments)
-                })
-            }
+        rootAddDevice(client, root, device, function (err, id, message, status) {
+            callback(err, id, message, status)
+            client.close()
         })
     })
-    //client.on('iAm', function (device) {
-    //if (device.deviceId == 1031) {
-    // readObjectInfo(client, device.address, 1, bacnet.enum.BacnetObjectTypes.OBJECT_ANALOG_INPUT, bacnet.enum.BacnetPropertyIds.PROP_ALL, function (err, result) {
-    //     var Property_Name = "OBJECT_ANALOG_INPUT";
-    //     bacnetutil.readPropertyInstanceByName(result, Property_Name)
-
-    //     console.log(arguments)
-    // })
-    // readDeviceInfo(client, device, function (err, result) {
-    //     console.log(arguments)
-    //     if (!result) {
-    //     }
-    // });
-    //}
-    //})
 }
 
-
-// Initialize BACStack
-//generateBACnetXml(["1031"], )
-function generateBACnetXml(devices, propertys) {
-    var adpuTimeout = 3000
-    var client = new bacnet({
-        adpuTimeout: adpuTimeout
-    });
-    WhoIsDevice(client, adpuTimeout, 1, function (device) {
-        console.log(device)
-        if (devices.indexOf(device.deviceId)) {
-            var address = device.address;
-            if (device.npdu) {
-                if (device.npdu.source) {
-                    address = { address: device.address, net: device.npdu.source.net, adr: device.npdu.source.adr };
-                }
+function rootAddDevice(client, root, device, callback) {
+    let propertysLen = 0;
+    readObjectInfo(client, device, device.deviceId, bacnet.enum.BacnetObjectTypes.OBJECT_DEVICE, bacnet.enum.BacnetPropertyIds.PROP_ALL,
+        function (err, result) {
+            if (err) {
+                console.log(err)
+                rootAddDevice(client, root, device, callback)
+                return
             }
-            readObjectInfo(client, address, device.deviceId, bacnet.enum.BacnetObjectTypes.OBJECT_DEVICE, bacnet.enum.BacnetPropertyIds.PROP_ALL, function (err, result) {
-                if (result) {
-                    var builder = new xml2js.Builder();
-                    var xml = builder.buildObject(result);
-                    fs.writeFileSync("test.xml", xml);
-                    console.log(err, result)
-                    //bacnetutil.readAllProertys(result);
-                }
+            var deviceXml = root.ele('device', deviceToXmlObj(device));
+            let object_name = bacnetutil.searchProperty(result, bacnetenum.BacnetPropertyIds.PROP_OBJECT_NAME)
+            //迭代 AI AO BI BO ....
+            xmlAddPropertysAll(client, device, propertys, deviceXml, result, function () {
+                callback(null, "device_" + device.deviceId, object_name + " Add deivce to project ", 1)
+                console.log("over")
             })
 
-        }
-    })
+            // propertys.forEach(function (Property_Name, index) {
+            //     propertysLen++;
+            //     callback(null, "objcet_" + device.deviceId, object_name + " Discovering object properties", propertysLen / propertys.length)
+            //     let Object_Type = bacnetenum.BacnetObjectTypes[Property_Name]
+
+            //     var instances = bacnetutil.readPropertyInstanceByObjectType(result, Object_Type)
+            //     xmlAddObjectAll(client, device, Object_Type, deviceXml, instances, function () {
+            //         console.log("全完了")
+
+            //         var xml = deviceXml.end({ pretty: true }).toString()
+            //         fs.writeFileSync("./test2.xml", xml)
+            //     })
+            // })
+            // var xml = deviceXml.end({ pretty: true }).toString()
+            // fs.writeFileSync("./test2.xml", xml)
+            // instances.forEach(function (pointInstance, pointIndex) {
+            //     let pointXml = deviceXml.ele("point", { type: Object_Type, instance: pointInstance })
+            //     readObjectInfoAll(client, device, pointInstance, Object_Type, function (err, res) {
+            //         for (let el in res) {
+            //             pointXml.ele(el.substr(5, el.length).toLowerCase(), {}, res[el])
+            //         }
+            //         var xml = deviceXml.end({ pretty: true }).toString()
+            //         fs.writeFileSync("./test2.xml", xml)
+            //     })
+            // })
+        })
 }
-//client.timeSync('192.168.253.253', new Date(), true);
-// getDevices(3000, 1, function (err, result) {
-//     console.log(err, result);
-// })
+exports.generateBACnetXml = generateBACnetXml;
+function xmlAddPropertysAll(client, device, propertys, deviceXml, result, callback) {
+    var Property_Name = propertys.shift()
+    let Object_Type = bacnetenum.BacnetObjectTypes[Property_Name]
+    console.log(instances)
+    if (Property_Name) {
+        var instances = bacnetutil.readPropertyInstanceByObjectType(result, Object_Type)
+        xmlAddObjectAll(client, device, Object_Type, deviceXml, instances, function () {
+            console.log("完了一个 property")
+            var xml = deviceXml.end({ pretty: true }).toString()
+            fs.writeFileSync("./test2.xml", xml)
+            xmlAddPropertysAll(client, device, propertys, deviceXml, result, callback)
+        })
+    } else {
+        callback()
+    }
+}
+function xmlAddObjectAll(client, device, Object_Type, deviceXml, instances, callback) {
+    var pointInstance = instances.shift();
+    if (pointInstance != undefined) {
+        let pointXml = deviceXml.ele("point", { type: Object_Type, instance: pointInstance })
+        readObjectInfoAll(client, device, pointInstance, Object_Type, function (err, res) {
+            if (err) {
+                xmlAddObjectAll(client, device, Object_Type, deviceXml, instances, callback)
+                return;
+            }
+            for (let el in res) {
+                pointXml.ele(el.substr(5, el.length).toLowerCase(), {}, res[el])
+            }
+            xmlAddObjectAll(client, device, Object_Type, deviceXml, instances, callback)
+        })
+    } else {
+        callback()
+    }
+}
+//whois device
+function deviceToXmlObj(device) {
+    var obj = {}
+    if (device.address) {
+        obj.address = device.address;
+    }
+    if (device.deviceId) {
+        obj.instance = device.deviceId;
+    }
+    if (device.npdu) {
+        if (device.npdu.source) {
+            if (device.npdu.source.net !== undefined) {
+                obj.net = device.npdu.source.net;
+            }
+            if (device.npdu.source.adr !== undefined) {
+                obj.adr = device.npdu.source.adr;
+            }
+        }
+    }
+    return obj;
+}
+
 // getWhoIsData(3000, function (err, data) {
 //     console.log(data)
 // })
@@ -92,7 +148,7 @@ function getWhoIsData(adpuTimeout, callback) {
     setTimeout(function () {
         client.close()
         callback(null, resData);
-    }, adpuTimeout * whoIsCount + adpuTimeout * 2)
+    }, adpuTimeout * (whoIsCount + 2))
     bacnetutil.BACnetIAm(client, null, function (device) {
         client.timeSync(device.address, new Date(), true);
         readDeviceInfo(client, device, readDeviceInfoCallback)
@@ -109,33 +165,26 @@ function getWhoIsData(adpuTimeout, callback) {
                 resData.push(data)
         }
     })
-
-    // WhoIsDevice(client, adpuTimeout, whoIsCount, function (device) {
-    //     client.timeSync(device.address, new Date(), true);
-    //     deviceCount++;
-    //     var recryCount = 2;
-    //     readDeviceInfo(client, device, readDeviceInfoCallback)
-    // function readDeviceInfoCallback(err, data) {
-    //     if (err) {
-    //         recryCount--;
-    //         if (recryCount >= 0) {
-    //             readDeviceInfo(client, device, readDeviceInfoCallback)
-    //         }
-    //     }
-    //     if (data) {
-    //         var isHave = resData.find(function (value, index) {
-    //             if (value.instance == data.instance & value.device_name == data.device_name) {
-    //                 return true
-    //             }
-    //         })
-    //         if (!isHave) {
-    //             resData.push(data)
-    //         }
-    //     }
-    // }
-    // })
 }
-
+function getWhoIsData2(adpuTimeout, callback) {
+    var resData = [];
+    var whoIsCount = 2;
+    var client = new bacnet({
+        adpuTimeout: adpuTimeout
+    });
+    var intval = setInterval(function () {
+        client.whoIs()
+    }, adpuTimeout)
+    setTimeout(function () {
+        clearInterval(intval)
+        client.close()
+        callback(null, resData);
+    }, adpuTimeout * (whoIsCount + 2))
+    bacnetutil.BACnetIAm(client, null, function (device) {
+        client.timeSync(device.address, new Date(), true);
+        resData.push(device)
+    })
+}
 
 
 function WhoIsDevice(client, adpuTimeout, whoIsCount, callback) {
@@ -173,7 +222,7 @@ function readObjectInfoAll(client, address, instance, objectType, callback) {
                 resObj[property] = res
             }
         }
-        console.log(resObj)
+        //console.log(resObj)
         callback(null, resObj);
     })
 }
@@ -200,7 +249,7 @@ function readDeviceInfo(client, device, callback) {
         }
     });
 }
-function readObjectInfo(client, device, instance, objectType, propertyIdentifier, callback, recryCount) {
+function readObjectInfo(client, device, instance, objectType, propertyIdentifier, callback) {
     var address = device.address;
     if (device.npdu) {
         if (device.npdu.source) {
@@ -218,21 +267,25 @@ function readObjectInfo(client, device, instance, objectType, propertyIdentifier
     }];
     client.readPropertyMultiple(address, requestArray, function (err, result) {
         if (err) {
-            if (recryCount == undefined) {
-                recryCount = 0
-            }
-            if (recryCount >= 5) {
-                callback(err, result)
-            }
-            readObjectInfo(client, device, instance, objectType, propertyIdentifier, callback, recryCount++)
+            console.log(err)
+            // if (!recryCount) {
+            //     recryCount = 0
+            // }
+            // recryCount++;
+            // if (recryCount >= 50) {
+            //     callback(err, result)
+            // }
+            //readObjectInfo(client, device, instance, objectType, propertyIdentifier, callback)
+            callback(err, result)
         } else {
+            console.log(result)
             callback(err, result)
         }
     });
 }
 
 exports.getWhoIsData = getWhoIsData;
-
+exports.getWhoIsData2 = getWhoIsData2;
 // Discover Devices
 //client.on('iAm', function (device) {
 //console.log(device)
@@ -249,3 +302,65 @@ exports.getWhoIsData = getWhoIsData;
 //readDeviceInfo("192.168.253.253", "1103");
 //readDeviceInfo("192.168.253.253", "1031");
 //readDeviceInfo({ address: "192.168.253.253", net: "1100", adr: ["3"] }, "1103");
+//test()
+function test() {
+    var client = new bacnet({
+        adpuTimeout: 10000
+    });
+    var root = xmlbuilder.create("root")
+
+    bacnetutil.BACnetIAm(client, null, function (device) {
+        console.log(device)
+        var deviceXml = root.ele('device', deviceToXmlObj(device));
+        readObjectInfo(client, device, device.deviceId, 8, 8, function (err, result) {
+            if (err) {
+                console.log(err)
+                return
+            }
+            var propertys = ['OBJECT_ACCUMULATOR',
+                'OBJECT_ANALOG_INPUT',
+                'OBJECT_ANALOG_OUTPUT',
+                'OBJECT_ANALOG_VALUE',
+                'OBJECT_AVERAGING',
+                'OBJECT_BINARY_INPUT',
+                'OBJECT_BINARY_OUTPUT',
+                'OBJECT_BINARY_VALUE',
+                'OBJECT_CALENDAR',
+                'OBJECT_COMMAND',
+                'OBJECT_EVENT_ENROLLMENT',
+                'OBJECT_FILE',
+                'OBJECT_GROUP',
+                'OBJECT_LOOP',
+                'OBJECT_LIFE_SAFETY_POINT',
+                'OBJECT_LIFE_SAFETY_ZONE',
+                'OBJECT_MULTI_STATE_INPUT',
+                'OBJECT_MULTI_STATE_OUTPUT',
+                'OBJECT_MULTI_STATE_VALUE',
+                'OBJECT_NOTIFICATION_CLASS',
+                'OBJECT_PROGRAM',
+                'OBJECT_PULSE_CONVERTER',
+                'OBJECT_SCHEDULE',
+                'OBJECT_TRENDLOG'];
+
+
+            propertys.forEach(function (Property_Name, index) {
+                var Object_Type = bacnetenum.BacnetObjectTypes[Property_Name]
+                console.log(propertysLen)
+                bacnetutil.readPropertyInstanceByObjectType(result, Object_Type)
+                    .forEach(function (pointInstance, pointIndex) {
+
+                        let pointXml = deviceXml.ele("point", { type: Object_Type, instance: pointInstance })
+                        readObjectInfoAll(client, device, pointInstance, Object_Type, function (err, res) {
+                            for (let el in res) {
+                                pointXml.ele(el.substr(5, el.length).toLowerCase(), {}, res[el])
+                            }
+                            var xml = deviceXml.end({ pretty: true }).toString()
+                            fs.writeFileSync("./test2.xml", xml)
+                            //console.log(arguments)
+                        })
+                    })
+            })
+        })
+    })
+
+}

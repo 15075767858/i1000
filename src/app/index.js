@@ -1,4 +1,7 @@
 var fs = require("fs");
+var iBACnet = require("../app/bacnet");
+var bacnetutil = require("../app/bacnetutil")
+
 var config;
 fs.readFile("json/config.json", function (err, buff) {
     var str = buff.toString()
@@ -6,7 +9,6 @@ fs.readFile("json/config.json", function (err, buff) {
     config = data;
     console.log(data)
 })
-
 
 // Create an empty menubar
 var menu = new nw.Menu({
@@ -17,8 +19,14 @@ var submenu = new nw.Menu();
 var menu1 = new nw.MenuItem({
     label: 'QB BACnet Discovery Wizard...'
 })
+
 menu1.click = function () {
-    Ext.Msg.alert("asda", "asda")
+    var win;
+    if (win = Ext.getCmp("ConfigBACnet")) {
+        win.show();
+    } else {
+        Ext.create("ConfigBACnet")
+    }
 }
 var menu2 = new nw.MenuItem({
     label: 'QB Modbus Configuration Wizard...',
@@ -34,7 +42,7 @@ submenu.append(menu2);
 submenu.append(menu3);
 // Create and append the 1st level menu to the menubar
 menu.append(new nw.MenuItem({
-    label: 'First Menu',
+    label: 'Tools',
     submenu: submenu
 }));
 // Assign it to `window.menu` to get the menu displayed

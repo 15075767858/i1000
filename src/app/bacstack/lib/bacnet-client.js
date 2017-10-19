@@ -1,15 +1,15 @@
 // Util Modules
-var events        = require('events');
-var debug         = require('debug')('bacstack');
+var events = require('events');
+var debug = require('debug')('bacstack');
 
 // Local Modules
-var baTransport   = require('./bacnet-transport');
-var baServices    = require('./bacnet-services');
-var baAsn1        = require('./bacnet-asn1');
-var baAdpu        = require('./bacnet-adpu');
-var baNpdu        = require('./bacnet-npdu');
-var baBvlc        = require('./bacnet-bvlc');
-var baEnum        = require('./bacnet-enum');
+var baTransport = require('./bacnet-transport');
+var baServices = require('./bacnet-services');
+var baAsn1 = require('./bacnet-asn1');
+var baAdpu = require('./bacnet-adpu');
+var baNpdu = require('./bacnet-npdu');
+var baBvlc = require('./bacnet-bvlc');
+var baEnum = require('./bacnet-enum');
 
 /**
  * To be able to communicate to BACNET devices, you have to initialize a new bacstack instance.
@@ -29,7 +29,7 @@ var baEnum        = require('./bacnet-enum');
  *   adpuTimeout: 6000                     // Wait twice as long for response
  * });
  */
-module.exports = function(options) {
+module.exports = function (options) {
   var self = new events.EventEmitter();
 
   var DEFAULT_HOP_COUNT = 0xFF;
@@ -57,31 +57,31 @@ module.exports = function(options) {
   });
 
   // Helper utils
-  var getInvokeId = function() {
+  var getInvokeId = function () {
     var id = invokeCounter++;
     if (id >= 256) invokeCounter = 1;
     return id - 1;
   };
 
-  var invokeCallback = function(id, err, result) {
+  var invokeCallback = function (id, err, result) {
     var callback = invokeStore[id];
     if (callback) return callback(err, result);
     debug('InvokeId ', id, ' not found -> drop package');
   };
 
-  var addCallback = function(id, callback) {
-    var timeout = setTimeout(function() {
+  var addCallback = function (id, callback) {
+    var timeout = setTimeout(function () {
       delete invokeStore[id];
       callback(new Error('ERR_TIMEOUT'));
     }, settings.adpuTimeout);
-    invokeStore[id] = function(err, data) {
+    invokeStore[id] = function (err, data) {
       clearTimeout(timeout);
       delete invokeStore[id];
       callback(err, data);
     };
   };
 
-  var getBuffer = function() {
+  var getBuffer = function () {
     return {
       buffer: Buffer.alloc(transport.getMaxPayload()),
       offset: BVLC_HEADER_LENGTH
@@ -89,17 +89,17 @@ module.exports = function(options) {
   };
 
   // Service Handlers
-  var processError = function(invokeId, buffer, offset, length) {
+  var processError = function (invokeId, buffer, offset, length) {
     var result = baServices.decodeError(buffer, offset, length);
     if (!result) return debug('Couldn`t decode Error');
     invokeCallback(invokeId, new Error('BacnetError - Class:' + result.class + ' - Code:' + result.code));
   };
 
-  var processAbort = function(invokeId, reason) {
+  var processAbort = function (invokeId, reason) {
     invokeCallback(invokeId, new Error('BacnetAbort - Reason:' + reason));
   };
 
-  var segmentAckResponse = function(receiver, negative, server, originalInvokeId, sequencenumber, actualWindowSize) {
+  var segmentAckResponse = function (receiver, negative, server, originalInvokeId, sequencenumber, actualWindowSize) {
     var buffer = getBuffer();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE, receiver, null, DEFAULT_HOP_COUNT, baEnum.BacnetNetworkMessageTypes.NETWORK_MESSAGE_WHO_IS_ROUTER_TO_NETWORK, 0);
     baAdpu.encodeSegmentAck(buffer, baEnum.BacnetPduTypes.PDU_TYPE_SEGMENT_ACK | (negative ? baEnum.BacnetPduTypes.NEGATIVE_ACK : 0) | (server ? baEnum.BacnetPduTypes.SERVER : 0), originalInvokeId, sequencenumber, actualWindowSize);
@@ -107,7 +107,7 @@ module.exports = function(options) {
     transport.send(buffer.buffer, buffer.offset, receiver);
   };
 
-  var performDefaultSegmentHandling = function(sender, adr, type, service, invokeId, maxSegments, maxAdpu, sequencenumber, first, moreFollows, buffer, offset, length) {
+  var performDefaultSegmentHandling = function (sender, adr, type, service, invokeId, maxSegments, maxAdpu, sequencenumber, first, moreFollows, buffer, offset, length) {
     if (first) {
       segmentStore = [];
       type &= ~baEnum.BacnetPduTypes.SEGMENTED_MESSAGE;
@@ -135,7 +135,7 @@ module.exports = function(options) {
     }
   };
 
-  var processSegment = function(receiver, type, service, invokeId, maxSegments, maxAdpu, server, sequencenumber, proposedWindowNumber, buffer, offset, length) {
+  var processSegment = function (receiver, type, service, invokeId, maxSegments, maxAdpu, server, sequencenumber, proposedWindowNumber, buffer, offset, length) {
     var first = false;
     if (sequencenumber === 0 && lastSequenceNumber === 0) {
       first = true;
@@ -155,75 +155,75 @@ module.exports = function(options) {
     performDefaultSegmentHandling(this, receiver, type, service, invokeId, maxSegments, maxAdpu, sequencenumber, first, moreFollows, buffer, offset, length);
   };
 
-  var processConfirmedServiceRequest = function(address, type, service, maxSegments, maxAdpu, invokeId, buffer, offset, length) {
+  var processConfirmedServiceRequest = function (address, type, service, maxSegments, maxAdpu, invokeId, buffer, offset, length) {
     var result;
     debug('Handle processConfirmedServiceRequest');
     if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_READ_PROPERTY) {
       result = baServices.decodeReadProperty(buffer, offset, length);
       if (!result) return debug('Received invalid readProperty message');
-      self.emit('readProperty', {address: address, invokeId: invokeId, request: result});
+      self.emit('readProperty', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_WRITE_PROPERTY) {
       result = baServices.decodeWriteProperty(buffer, offset, length);
       if (!result) return debug('Received invalid writeProperty message');
-      self.emit('writeProperty', {address: address, invokeId: invokeId, request: result});
+      self.emit('writeProperty', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_READ_PROP_MULTIPLE) {
       result = baServices.decodeReadPropertyMultiple(buffer, offset, length);
       if (!result) return debug('Received invalid readPropertyMultiple message');
-      self.emit('readPropertyMultiple', {address: address, invokeId: invokeId, request: result});
+      self.emit('readPropertyMultiple', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_WRITE_PROP_MULTIPLE) {
       result = baServices.decodeWritePropertyMultiple(buffer, offset, length);
       if (!result) return debug('Received invalid writePropertyMultiple message');
-      self.emit('writePropertyMultiple', {address: address, invokeId: invokeId, request: result});
+      self.emit('writePropertyMultiple', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_COV_NOTIFICATION) {
       result = baServices.decodeCOVNotifyUnconfirmed(buffer, offset, length);
       if (!result) return debug('Received invalid covNotifyUnconfirmed message');
-      self.emit('covNotifyUnconfirmed', {address: address, invokeId: invokeId, request: result});
+      self.emit('covNotifyUnconfirmed', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_ATOMIC_WRITE_FILE) {
       result = baServices.decodeAtomicWriteFile(buffer, offset, length);
       if (!result) return debug('Received invalid atomicWriteFile message');
-      self.emit('atomicWriteFile', {address: address, invokeId: invokeId, request: result});
+      self.emit('atomicWriteFile', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_ATOMIC_READ_FILE) {
       result = baServices.decodeAtomicReadFile(buffer, offset, length);
       if (!result) return debug('Received invalid atomicReadFile message');
-      self.emit('atomicReadFile', {address: address, invokeId: invokeId, request: result});
+      self.emit('atomicReadFile', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_SUBSCRIBE_COV) {
       result = baServices.decodeSubscribeCOV(buffer, offset, length);
       if (!result) return debug('Received invalid subscribeCOV message');
-      self.emit('subscribeCOV', {address: address, invokeId: invokeId, request: result});
+      self.emit('subscribeCOV', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_SUBSCRIBE_COV_PROPERTY) {
       result = baServices.decodeSubscribeProperty(buffer, offset, length);
       if (!result) return debug('Received invalid subscribeProperty message');
-      self.emit('subscribeProperty', {address: address, invokeId: invokeId, request: result});
+      self.emit('subscribeProperty', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_DEVICE_COMMUNICATION_CONTROL) {
       result = baServices.decodeDeviceCommunicationControl(buffer, offset, length);
       if (!result) return debug('Received invalid deviceCommunicationControl message');
-      self.emit('deviceCommunicationControl', {address: address, invokeId: invokeId, request: result});
+      self.emit('deviceCommunicationControl', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_REINITIALIZE_DEVICE) {
       result = baServices.decodeReinitializeDevice(buffer, offset, length);
       if (!result) return debug('Received invalid reinitializeDevice message');
-      self.emit('reinitializeDevice', {address: address, invokeId: invokeId, request: result});
+      self.emit('reinitializeDevice', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_EVENT_NOTIFICATION) {
       result = baServices.decodeEventNotifyData(buffer, offset, length);
       if (!result) return debug('Received invalid eventNotifyData message');
-      self.emit('eventNotifyData', {address: address, invokeId: invokeId, request: result});
+      self.emit('eventNotifyData', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_READ_RANGE) {
       result = baServices.decodeReadRange(buffer, offset, length);
       if (!result) return debug('Received invalid readRange message');
-      self.emit('readRange', {address: address, invokeId: invokeId, request: result});
+      self.emit('readRange', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_CREATE_OBJECT) {
       result = baServices.decodeCreateObject(buffer, offset, length);
       if (!result) return debug('Received invalid createObject message');
-      self.emit('createObject', {address: address, invokeId: invokeId, request: result});
+      self.emit('createObject', { address: address, invokeId: invokeId, request: result });
     } else if (service === baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_DELETE_OBJECT) {
       result = baServices.decodeDeleteObject(buffer, offset, length);
       if (!result) return debug('Received invalid deleteObject message');
-      self.emit('deleteObject', {address: address, invokeId: invokeId, request: result});
+      self.emit('deleteObject', { address: address, invokeId: invokeId, request: result });
     } else {
       debug('Received unsupported confirmed service request');
     }
   };
 
-  var processUnconfirmedServiceRequest = function(address, type, service, buffer, offset, length,npdu) {
+  var processUnconfirmedServiceRequest = function (address, type, service, buffer, offset, length, npdu) {
     var result;
     debug('Handle processUnconfirmedServiceRequest');
     if (service === baEnum.BacnetUnconfirmedServices.SERVICE_UNCONFIRMED_I_AM) {
@@ -246,15 +246,15 @@ module.exports = function(options) {
        *   console.log('address: ', device.address, ' - deviceId: ', device.deviceId, ' - maxAdpu: ', device.maxAdpu, ' - segmentation: ', device.segmentation, ' - vendorId: ', device.vendorId);
        * });
        */
-      self.emit('iAm', {npdu:npdu,address: address, deviceId: result.deviceId, maxApdu: result.maxApdu, segmentation: result.segmentation, vendorId: result.vendorId});
+      self.emit('iAm', { npdu: npdu, address: address, deviceId: result.deviceId, maxApdu: result.maxApdu, segmentation: result.segmentation, vendorId: result.vendorId });
     } else if (service === baEnum.BacnetUnconfirmedServices.SERVICE_UNCONFIRMED_WHO_IS) {
       result = baServices.decodeWhoIsBroadcast(buffer, offset, length);
       if (!result) return debug('Received invalid WhoIs message');
-      self.emit('whoIs', {address: address, lowLimit: result.lowLimit, highLimit: result.highLimit});
+      self.emit('whoIs', { address: address, lowLimit: result.lowLimit, highLimit: result.highLimit });
     } else if (service === baEnum.BacnetUnconfirmedServices.SERVICE_UNCONFIRMED_WHO_HAS) {
       result = baServices.decodeWhoHasBroadcast(buffer, offset, length);
       if (!result) return debug('Received invalid WhoHas message');
-      self.emit('whoHas', {address: address, lowLimit: result.lowLimit, highLimit: result.highLimit, objId: result.objId, objName: result.objName});
+      self.emit('whoHas', { address: address, lowLimit: result.lowLimit, highLimit: result.highLimit, objId: result.objId, objName: result.objName });
     } else if (service === baEnum.BacnetUnconfirmedServices.SERVICE_UNCONFIRMED_COV_NOTIFICATION) {
       debug('TODO: Implement COVNotify');
       //result = baServices.decodeCOVNotifyUnconfirmed(buffer, offset, length);
@@ -263,38 +263,38 @@ module.exports = function(options) {
     } else if (service === baEnum.BacnetUnconfirmedServices.SERVICE_UNCONFIRMED_TIME_SYNCHRONIZATION) {
       result = baServices.decodeTimeSync(buffer, offset, length);
       if (!result) return debug('Received invalid TimeSync message');
-      self.emit('timeSync', {address: address, dateTime: result.dateTime});
+      self.emit('timeSync', { address: address, dateTime: result.dateTime });
     } else if (service === baEnum.BacnetUnconfirmedServices.SERVICE_UNCONFIRMED_UTC_TIME_SYNCHRONIZATION) {
       result = baServices.decodeTimeSync(buffer, offset, length);
       if (!result) return debug('Received invalid TimeSyncUTC message');
-      self.emit('timeSyncUTC', {address: address, dateTime: result.dateTime});
+      self.emit('timeSyncUTC', { address: address, dateTime: result.dateTime });
     } else if (service === baEnum.BacnetUnconfirmedServices.SERVICE_UNCONFIRMED_EVENT_NOTIFICATION) {
       result = baServices.decodeEventNotifyData(buffer, offset, length);
       if (!result) return debug('Received invalid EventNotify message');
-      self.emit('eventNotify', {address: address, eventData: result.eventData});
+      self.emit('eventNotify', { address: address, eventData: result.eventData });
     } else {
       debug('Received unsupported unconfirmed service request');
     }
   };
 
-  var handlePdu = function(address, type, buffer, offset, length,npdu) {
+  var handlePdu = function (address, type, buffer, offset, length, npdu) {
     var result;
     // Handle different PDU types
     switch (type & baEnum.BacnetPduTypes.PDU_TYPE_MASK) {
       case baEnum.BacnetPduTypes.PDU_TYPE_UNCONFIRMED_SERVICE_REQUEST:
         result = baAdpu.decodeUnconfirmedServiceRequest(buffer, offset);
-        processUnconfirmedServiceRequest(address, result.type, result.service, buffer, offset + result.len, length - result.len,npdu);
+        processUnconfirmedServiceRequest(address, result.type, result.service, buffer, offset + result.len, length - result.len, npdu);
         break;
       case baEnum.BacnetPduTypes.PDU_TYPE_SIMPLE_ACK:
         result = baAdpu.decodeSimpleAck(buffer, offset);
         offset += result.len;
         length -= result.len;
-        invokeCallback(result.invokeId, null, {result: result, buffer: buffer, offset: offset + result.len, length: length - result.len});
+        invokeCallback(result.invokeId, null, { result: result, buffer: buffer, offset: offset + result.len, length: length - result.len });
         break;
       case baEnum.BacnetPduTypes.PDU_TYPE_COMPLEX_ACK:
         result = baAdpu.decodeComplexAck(buffer, offset);
         if ((type & baEnum.BacnetPduTypes.SEGMENTED_MESSAGE) === 0) {
-          invokeCallback(result.invokeId, null, {result: result, buffer: buffer, offset: offset + result.len, length: length - result.len});
+          invokeCallback(result.invokeId, null, { result: result, buffer: buffer, offset: offset + result.len, length: length - result.len });
         } else {
           processSegment(address, result.type, result.service, result.invokeId, baEnum.BacnetMaxSegments.MAX_SEG0, baEnum.BacnetMaxAdpu.MAX_APDU50, false, result.sequencenumber, result.proposedWindowNumber, buffer, offset + result.len, length - result.len);
         }
@@ -327,7 +327,7 @@ module.exports = function(options) {
     }
   };
 
-  var handleNpdu = function(buffer, offset, msgLength, remoteAddress) {
+  var handleNpdu = function (buffer, offset, msgLength, remoteAddress) {
     // Check data length
     if (msgLength <= 0) return debug('No NPDU data -> Drop package');
     // Parse baNpdu header
@@ -340,10 +340,10 @@ module.exports = function(options) {
     msgLength -= result.len;
     if (msgLength <= 0) return debug('No APDU data -> Drop package');
     var apduType = baAdpu.getDecodedType(buffer, offset);
-    handlePdu(remoteAddress, apduType, buffer, offset, msgLength,result);
+    handlePdu(remoteAddress, apduType, buffer, offset, msgLength, result);
   };
 
-  var receiveData = self.receiveData = function(buffer, remoteAddress) {
+  var receiveData = self.receiveData = function (buffer, remoteAddress) {
     // Check data length
     if (buffer.length < baBvlc.BVLC_HEADER_LENGTH) return debug('Received invalid data -> Drop package');
     // Parse BVLC header
@@ -357,7 +357,7 @@ module.exports = function(options) {
     }
   };
 
-  var receiveError = function(err) {
+  var receiveError = function (err) {
 
     /**
      * @event bacstack.error
@@ -387,7 +387,7 @@ module.exports = function(options) {
    *
    * client.whoIs();
    */
-  self.whoIs = function(lowLimit, highLimit, address) {
+  self.whoIs = function (lowLimit, highLimit, address) {
     var buffer = getBuffer();
     address = address || transport.getBroadcastAddress();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE, address, null, DEFAULT_HOP_COUNT, baEnum.BacnetNetworkMessageTypes.NETWORK_MESSAGE_WHO_IS_ROUTER_TO_NETWORK, 0);
@@ -410,7 +410,7 @@ module.exports = function(options) {
    *
    * client.timeSync('192.168.1.43', new Date(), true);
    */
-  self.timeSync = function(address, dateTime, isUtc) {
+  self.timeSync = function (address, dateTime, isUtc) {
     var buffer = getBuffer();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE, address);
     if (!isUtc) {
@@ -441,7 +441,7 @@ module.exports = function(options) {
    *   console.log('value: ', value);
    * });
    */
-  self.readProperty = function(address, objectType, objectInstance, propertyId, arrayIndex, next) {
+  self.readProperty = function (address, objectType, objectInstance, propertyId, arrayIndex, next) {
     arrayIndex = arrayIndex || baAsn1.BACNET_ARRAY_ALL;
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
@@ -452,7 +452,7 @@ module.exports = function(options) {
     baServices.encodeReadProperty(buffer, objectType, objectInstance, propertyId, arrayIndex);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       var result = baServices.decodeReadPropertyAcknowledge(data.buffer, data.offset, data.length);
       if (!result) return next(new Error('INVALID_DECODING'));
@@ -482,7 +482,7 @@ module.exports = function(options) {
    *   console.log('value: ', value);
    * });
    */
-  self.writeProperty = function(address, objectType, objectInstance, propertyId, priority, valueList, next) {
+  self.writeProperty = function (address, objectType, objectInstance, propertyId, priority, valueList, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -491,7 +491,7 @@ module.exports = function(options) {
     baServices.encodeWriteProperty(buffer, objectType, objectInstance, propertyId, baAsn1.BACNET_ARRAY_ALL, priority, valueList);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       next(err);
     });
   };
@@ -518,7 +518,7 @@ module.exports = function(options) {
    *   console.log('value: ', value);
    * });
    */
-  self.readPropertyMultiple = function(address, propertiesArray, next) {
+  self.readPropertyMultiple = function (address, propertiesArray, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG0;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -527,8 +527,9 @@ module.exports = function(options) {
     baAdpu.encodeConfirmedServiceRequest(buffer, type, baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_READ_PROP_MULTIPLE, maxSegments, baEnum.BacnetMaxAdpu.MAX_APDU1476, invokeId, 0, 0);
     baServices.encodeReadPropertyMultiple(buffer, propertiesArray);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
-    transport.send(buffer.buffer, buffer.offset, address.address||address);
-    addCallback(invokeId, function(err, data) {
+    transport.send(buffer.buffer, buffer.offset, address.address || address);
+
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       var result = baServices.decodeReadPropertyMultipleAcknowledge(data.buffer, data.offset, data.length);
       if (!result) return next(new Error('INVALID_DECODING'));
@@ -566,7 +567,7 @@ module.exports = function(options) {
    *   console.log('value: ', value);
    * });
    */
-  self.writePropertyMultiple = function(address, valueList, next) {
+  self.writePropertyMultiple = function (address, valueList, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -575,7 +576,7 @@ module.exports = function(options) {
     baServices.encodeWriteObjectMultiple(buffer, valueList);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       next(err);
     });
   };
@@ -596,7 +597,7 @@ module.exports = function(options) {
    *   console.log('value: ', value);
    * });
    */
-  self.deviceCommunicationControl = function(address, timeDuration, enableDisable, password, next) {
+  self.deviceCommunicationControl = function (address, timeDuration, enableDisable, password, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -605,7 +606,7 @@ module.exports = function(options) {
     baServices.encodeDeviceCommunicationControl(buffer, timeDuration, enableDisable, password);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       next(err);
     });
   };
@@ -625,7 +626,7 @@ module.exports = function(options) {
    *   console.log('value: ', value);
    * });
    */
-  self.reinitializeDevice = function(address, state, password, next) {
+  self.reinitializeDevice = function (address, state, password, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -634,12 +635,12 @@ module.exports = function(options) {
     baServices.encodeReinitializeDevice(buffer, state, password);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       next(err);
     });
   };
 
-  self.writeFile = function(address, objectId, position, count, fileBuffer, next) {
+  self.writeFile = function (address, objectId, position, count, fileBuffer, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -648,7 +649,7 @@ module.exports = function(options) {
     baServices.encodeAtomicWriteFile(buffer, true, objectId, position, 1, fileBuffer, count);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       var result = baServices.decodeAtomicWriteFileAcknowledge(data.buffer, data.offset, data.length);
       if (!result) return next(new Error('INVALID_DECODING'));
@@ -656,7 +657,7 @@ module.exports = function(options) {
     });
   };
 
-  self.readFile = function(address, objectId, position, count, next) {
+  self.readFile = function (address, objectId, position, count, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -665,7 +666,7 @@ module.exports = function(options) {
     baServices.encodeAtomicReadFile(buffer, true, objectId, position, count);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       var result = baServices.decodeAtomicReadFileAcknowledge(data.buffer, data.offset, data.length);
       if (!result) return next(new Error('INVALID_DECODING'));
@@ -673,7 +674,7 @@ module.exports = function(options) {
     });
   };
 
-  self.readRange = function(address, objectId, idxBegin, quantity, next) {
+  self.readRange = function (address, objectId, idxBegin, quantity, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -682,7 +683,7 @@ module.exports = function(options) {
     baServices.encodeReadRange(buffer, objectId, baEnum.BacnetPropertyIds.PROP_LOG_BUFFER, baAsn1.BACNET_ARRAY_ALL, baEnum.BacnetReadRangeRequestTypes.RR_BY_POSITION, idxBegin, new Date(), quantity);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       var result = baServices.decodeReadRangeAcknowledge(data.buffer, data.offset, data.length);
       if (!result) return next(new Error('INVALID_DECODING'));
@@ -690,7 +691,7 @@ module.exports = function(options) {
     });
   };
 
-  self.subscribeCOV = function(address, objectId, subscribeId, cancel, issueConfirmedNotifications, lifetime, next) {
+  self.subscribeCOV = function (address, objectId, subscribeId, cancel, issueConfirmedNotifications, lifetime, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -699,13 +700,13 @@ module.exports = function(options) {
     baServices.encodeSubscribeCOV(buffer, subscribeId, objectId, cancel, issueConfirmedNotifications, lifetime);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       next();
     });
   };
 
-  self.subscribeProperty = function(address, objectId, monitoredProperty, subscribeId, cancel, issueConfirmedNotifications, next) {
+  self.subscribeProperty = function (address, objectId, monitoredProperty, subscribeId, cancel, issueConfirmedNotifications, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -714,13 +715,13 @@ module.exports = function(options) {
     baServices.encodeSubscribeProperty(buffer, subscribeId, objectId, cancel, issueConfirmedNotifications, 0, monitoredProperty, false, 0x0f);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       next();
     });
   };
 
-  self.createObject = function(address, objectId, valueList, next) {
+  self.createObject = function (address, objectId, valueList, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -729,13 +730,13 @@ module.exports = function(options) {
     baServices.encodeCreateObject(buffer, objectId, valueList);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       next();
     });
   };
 
-  self.deleteObject = function(address, objectId, next) {
+  self.deleteObject = function (address, objectId, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -744,13 +745,13 @@ module.exports = function(options) {
     baServices.encodeDeleteObject(buffer, objectId);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       next();
     });
   };
 
-  self.removeListElement = function(address, objectId, reference, valueList, next) {
+  self.removeListElement = function (address, objectId, reference, valueList, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -759,13 +760,13 @@ module.exports = function(options) {
     baServices.encodeAddListElement(buffer, objectId, reference.propertyIdentifier, reference.propertyArrayIndex, valueList);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       next();
     });
   };
 
-  self.addListElement = function(address, objectId, reference, valueList, next) {
+  self.addListElement = function (address, objectId, reference, valueList, next) {
     var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
@@ -774,14 +775,14 @@ module.exports = function(options) {
     baServices.encodeAddListElement(buffer, objectId, reference.propertyIdentifier, reference.propertyArrayIndex, valueList);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
     transport.send(buffer.buffer, buffer.offset, address);
-    addCallback(invokeId, function(err, data) {
+    addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       next();
     });
   };
 
   // Public Device Functions
-  self.readPropertyResponse = function(receiver, invokeId, objectId, property, value) {
+  self.readPropertyResponse = function (receiver, invokeId, objectId, property, value) {
     var buffer = getBuffer();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE, receiver);
     baAdpu.encodeComplexAck(buffer, baEnum.BacnetPduTypes.PDU_TYPE_COMPLEX_ACK, baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_READ_PROPERTY, invokeId);
@@ -790,7 +791,7 @@ module.exports = function(options) {
     transport.send(buffer.buffer, buffer.offset, receiver);
   };
 
-  self.readPropertyMultipleResponse = function(receiver, invokeId, values) {
+  self.readPropertyMultipleResponse = function (receiver, invokeId, values) {
     var buffer = getBuffer();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE, receiver);
     baAdpu.encodeComplexAck(buffer, baEnum.BacnetPduTypes.PDU_TYPE_COMPLEX_ACK, baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_READ_PROP_MULTIPLE, invokeId);
@@ -799,7 +800,7 @@ module.exports = function(options) {
     transport.send(buffer.buffer, buffer.offset, receiver);
   };
 
-  self.iAmResponse = function(deviceId, segmentation, vendorId) {
+  self.iAmResponse = function (deviceId, segmentation, vendorId) {
     var buffer = getBuffer();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE, transport.getBroadcastAddress());
     baAdpu.encodeUnconfirmedServiceRequest(buffer, baEnum.BacnetPduTypes.PDU_TYPE_UNCONFIRMED_SERVICE_REQUEST, baEnum.BacnetUnconfirmedServices.SERVICE_UNCONFIRMED_I_AM);
@@ -808,7 +809,7 @@ module.exports = function(options) {
     transport.send(buffer.buffer, buffer.offset, transport.getBroadcastAddress());
   };
 
-  self.iHaveResponse = function(deviceId, objId, objName) {
+  self.iHaveResponse = function (deviceId, objId, objName) {
     var buffer = getBuffer();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE, transport.getBroadcastAddress());
     baAdpu.EecodeUnconfirmedServiceRequest(buffer, baEnum.BacnetPduTypes.PDU_TYPE_UNCONFIRMED_SERVICE_REQUEST, baEnum.BacnetUnconfirmedServices.SERVICE_UNCONFIRMED_I_HAVE);
@@ -817,7 +818,7 @@ module.exports = function(options) {
     transport.send(buffer.buffer, buffer.offset, transport.getBroadcastAddress());
   };
 
-  self.simpleAckResponse = function(receiver, service, invokeId) {
+  self.simpleAckResponse = function (receiver, service, invokeId) {
     var buffer = getBuffer();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE, receiver);
     baAdpu.encodeSimpleAck(buffer, baEnum.BacnetPduTypes.PDU_TYPE_SIMPLE_ACK, service, invokeId);
@@ -825,7 +826,7 @@ module.exports = function(options) {
     transport.send(buffer.buffer, buffer.offset, receiver);
   };
 
-  self.errorResponse = function(receiver, service, invokeId, errorClass, errorCode) {
+  self.errorResponse = function (receiver, service, invokeId, errorClass, errorCode) {
     var buffer = getBuffer();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE, receiver);
     baAdpu.encodeError(buffer, baEnum.BacnetPduTypes.PDU_TYPE_ERROR, service, invokeId);
@@ -843,7 +844,7 @@ module.exports = function(options) {
    *
    * client.close();
    */
-  self.close = function() {
+  self.close = function () {
     transport.close();
   };
 

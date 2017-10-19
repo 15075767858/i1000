@@ -12,6 +12,7 @@ Ext.define("ConfigBACnet", {
             whoisDelay: 2,
             selectDevices: [],
             currentDevice: 0,
+            errormessage: "",
             page2: [
 
             ]
@@ -31,10 +32,15 @@ Ext.define("ConfigBACnet", {
         itemId: 'card-next',
         handler: function () {
             var win = this.up("window")
-            win.showNext()
+            if (this.text == "Finsh") {
+                win.close()
+            } else {
+                win.showNext()
+            }
         }
     }, "   ", {
         text: "Cancel",
+        itemId: 'cancel',
         handler: function () {
             this.up("window").close();
         }
@@ -47,16 +53,29 @@ Ext.define("ConfigBACnet", {
     },
     doCardNavigation: function (incr) {
         var me = this;
-        var whoisDelay = me.viewModel.whoisDelay;
+        var whoisDelay = me.viewModel.get("whoisDelay") * 1000;
         var l = me.getLayout();
         var i = l.activeItem.itemId.split('card_')[1];
 
         var next = parseInt(i, 10) + incr;
+
         if (i == 0 & incr == 1) {
             me.layout.next()
             me.down('#card-next').setDisabled(true)
             var store = Ext.StoreManager.lookup("WhoIsDevices");
-            Ext.Ajax.request({
+            iBACnet.getWhoIsData2(whoisDelay, function (err, data) {
+                console.log(arguments)
+                if (err) {
+                    alert("load data failure ,please retry.")
+                    me.down('#card-prev').setDisabled(false);
+                } else {
+                    store.setData(data)
+                    me.layout.next()
+                    me.down('#card-prev').setDisabled(false);
+                    me.down('#card-next').setDisabled(true)
+                }
+            })
+            /*Ext.Ajax.request({
                 async: true,
                 url: "http://127.0.0.1:2018/getWhoIsDevices?whoisDelay=" + whoisDelay,
                 success: function (response) {
@@ -71,8 +90,13 @@ Ext.define("ConfigBACnet", {
                     alert("load data failure ,please retry.")
                     console.log(arguments)
                 }
-            })
-        } else if (i == 3 & incr == 1) {
+            })*/
+        } else if (i == 2 & incr == -1) {
+            me.layout.setActiveItem("card_0")
+            me.down('#card-prev').setDisabled(true);
+            me.down('#card-next').setDisabled(false);
+        }
+        else if (i == 3 & incr == 1) {
             var checkVaues = l.activeItem.down("form").getValues();
             console.log(checkVaues)
             var propertys = []
@@ -82,18 +106,59 @@ Ext.define("ConfigBACnet", {
                 }
             }
             var selectDevices = me.viewModel.get("selectDevices");
-            var deivces = [];
+            var devices = [];
             for (var i = 0; i < selectDevices.length; i++) {
-                deivces.push(selectDevices[i].data.instance)
+                devices.push(selectDevices[i].data.deviceId)
             }
+
             console.log(selectDevices)
-            Ext.Ajax.request({
-                url: "http://127.0.0.1:2018/generateBACnetXml",
-                method: "get",
-                params: { propertys: propertys, deivces: deivces }
-            })
-            
+            var store = Ext.StoreManager.lookup("discoverStore");
+            var pCount = 0;
             l.setActiveItem(next);
+            console.log(devices, propertys)
+            me.down('#card-prev').setDisabled(true);
+            me.down('#card-next').setDisabled(true);
+            me.down('#cancel').setDisabled(true);
+            me.down('#card-next').setText("Finsh");
+            var devicesLen = devices.length
+
+            bacnetutil.generateBACnetXml(null, devices, propertys,
+                function (err, id, message, status) {
+                    if (err) {
+                        me.viewModel.set("errormessage", err.message + " Retrying ...");
+                    } else {
+                        store.add({
+                            id: id,
+                            step: message,
+                            status: status
+                        })
+                        me.viewModel.set("errormessage", message);
+                        if (status == 1) {
+                            pCount++
+                            var currentDevice = Math.floor(pCount / 2)
+                            me.viewModel.set("currentDevice", currentDevice)
+
+                            if (currentDevice == devicesLen) {
+                                me.viewModel.set("errormessage", "Discovery has been successful .");
+                                me.down('#card-next').setDisabled(false);
+
+                            }
+                            else {
+                                //    me.down('#card-next').setDisabled(true);
+                            }
+                        }
+                        console.log(arguments)
+                    }
+                }
+            )
+
+            // Ext.Ajax.request({
+            //     url: "http://127.0.0.1:2018/generateBACnetXml",
+            //     method: "get",
+            //     params: { propertys: propertys, deivces: deivces, whoisDelay: whoisDelay }
+            // })
+
+
         } else {
             l.setActiveItem(next);
             me.down('#card-prev').setDisabled(next === 0);
@@ -222,31 +287,88 @@ Ext.define("ConfigBACnet", {
             selType: 'checkboxmodel',
             store: {
                 storeId: "WhoIsDevices",
-                fields: ["device_name", "vendor", "model", "instance", "prefix", "suffix"],
+                fields: ["address", "deviceId", "maxApdu", "vendorId", "device_name", "vendor", "model", "instance", "prefix", "suffix",
+                    {
+                        name: "adr",
+                        convert: function (v, model) {
+                            console.log(model)
+                            if (model) {
+                                if (model.data) {
+                                    if (model.data.npdu) {
+                                        if (model.data.npdu.source) {
+                                            return model.data.npdu.source.adr;
+                                        }
+                                    }
+                                }
+                            }
+                            return ""
+                        }
+                    },
+                    {
+                        name: "net",
+                        convert: function (v, model) {
+                            console.log(arguments)
+                            if (model) {
+                                if (model.data) {
+                                    if (model.data.npdu) {
+                                        if (model.data.npdu.source) {
+                                            return model.data.npdu.source.net;
+                                        }
+                                    }
+                                }
+                            }
+                            return ""
+                        }
+                    }],
                 data: [
                 ]
             },
-            columns: [{
-                text: "Device Name",
-                dataIndex: 'device_name',
-                flex: 1
-            }, {
-                text: "Vendor",
-                dataIndex: 'vendor',
-            }, {
-                text: "Model",
-                dataIndex: 'model'
-            }, {
-                text: "Instance",
-                dataIndex: 'instance'
-            }, {
-                text: "Prefix",
-                dataIndex: 'prefix',
-                width: 120,
-            }, {
-                text: "Suffix",
-                dataIndex: "suffix",
-            }]
+            columns: [
+                {
+                    text: "ip",
+                    dataIndex: "address"
+                },
+                {
+                    text: "instance",
+                    dataIndex: 'deviceId',
+                    flex: 1
+                },
+                {
+                    text: "net",
+                    dataIndex: 'net',
+                    flex: 1
+                },
+                {
+                    text: "adr",
+                    dataIndex: 'adr',
+                    flex: 1
+                },
+                {
+                    text: "Device Name",
+                    hidden: true,
+                    dataIndex: 'device_name',
+                    flex: 1
+                }, {
+                    text: "Vendor",
+                    hidden: true,
+                    dataIndex: 'vendor',
+                }, {
+                    text: "Model",
+                    hidden: true,
+                    dataIndex: 'model'
+                }, {
+                    text: "vendorId",
+                    dataIndex: 'vendorId'
+                }, {
+                    text: "Prefix",
+                    hidden: true,
+                    dataIndex: 'prefix',
+                    width: 120,
+                }, {
+                    text: "Suffix",
+                    hidden: true,
+                    dataIndex: "suffix",
+                }]
         }
         ]
     }, {
@@ -407,7 +529,8 @@ Ext.define("ConfigBACnet", {
                             "Discovering BACnet device            <strong>  {currentDevice} of { selectDevices.length } </strong>",
                             "<br>",
                             "Objects discovered for current device:<strong> {currentDevice} </strong>",
-                            "<br>"
+                            "<br>",
+                            "message:<i style='color:red'>{errormessage} </i>"
                         ].join("<br>"),
                     }
                 },
@@ -420,8 +543,6 @@ Ext.define("ConfigBACnet", {
                         data: [
                             { step: "Get existing project devices", status: 1 },
                             { step: "Get existing project object", status: 1 },
-                            { step: "{device_name}:Adding device to project", status: 0.7 },
-                            { step: "{device_name}:Discovering object properties", status: 0.8 }
                         ]
                     },
                     columns: [
