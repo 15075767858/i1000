@@ -275,6 +275,32 @@ Ext.define("ConfigBACnet", {
             // selModel: {
             //     type: 'checkboxmodel',
             // },
+            // { address: '192.168.253.253',
+            // instance: 1103,
+            // net: 1100,
+            // adr: 3,
+            // PROP_OBJECT_NAME: 'Controller',
+            // PROP_OBJECT_TYPE: 8,
+            // PROP_SYSTEM_STATUS: 0,
+            // PROP_VENDOR_NAME: '1000BAS',
+            // PROP_VENDOR_IDENTIFIER: 913,
+            // PROP_MODEL_NAME: 'PIO',
+            // PROP_PROTOCOL_VERSION: '0.8.2',
+            // PROP_FIRMWARE_REVISION: '1.3.0',
+            // PROP_APPLICATION_SOFTWARE_VERSION: '1.0',
+            // PROP_PROTOCOL_SERVICES_SUPPORTED: 'BitString:E9D10104D7',
+            // PROP_PROTOCOL_OBJECT_TYPES_SUPPORTED: 'BitString:9B850000000000',
+            // PROP_MAX_APDU_LENGTH_ACCEPTED: 480,
+            // PROP_SEGMENTATION_SUPPORTED: 0,
+            // PROP_NUMBER_OF_APDU_RETRIES: 3,
+            // PROP_APDU_TIMEOUT: 6000,
+            // PROP_DATABASE_REVISION: 2,
+            // PROP_MAX_MASTER: 64,
+            // PROP_MAX_INFO_FRAMES: 32,
+            // PROP_LOCAL_TIME: '1901-02-02 04:40:32 000',
+            // PROP_LOCAL_DATE: '2017-10-20 00:00:00 000',
+            // PROP_UTC_OFFSET: 480,
+            // PROP_DAYLIGHT_SAVINGS_STATUS: false } ] }
             listeners: {
                 selectionchange: function (check, selected, eOpts) {
                     var win = this.up("window");

@@ -29,6 +29,7 @@ var baEnum = require('./bacnet-enum');
  *   adpuTimeout: 6000                     // Wait twice as long for response
  * });
  */
+var invokeStore = {};
 module.exports = function (options) {
   var self = new events.EventEmitter();
 
@@ -36,7 +37,7 @@ module.exports = function (options) {
   var BVLC_HEADER_LENGTH = 4;
 
   var invokeCounter = 1;
-  var invokeStore = {};
+ 
 
   var lastSequenceNumber = 0;
   var segmentStore = [];
@@ -60,16 +61,21 @@ module.exports = function (options) {
   var getInvokeId = function () {
     var id = invokeCounter++;
     if (id >= 256) invokeCounter = 1;
+  
     return id - 1;
   };
 
   var invokeCallback = function (id, err, result) {
+    console.log("invokeCallback", id, err, result)
+    console.log("invokeStore", invokeStore)
     var callback = invokeStore[id];
     if (callback) return callback(err, result);
     debug('InvokeId ', id, ' not found -> drop package');
   };
 
   var addCallback = function (id, callback) {
+    console.log("addCallback",id,callback)
+    
     var timeout = setTimeout(function () {
       delete invokeStore[id];
       callback(new Error('ERR_TIMEOUT'));
@@ -79,6 +85,7 @@ module.exports = function (options) {
       delete invokeStore[id];
       callback(err, data);
     };
+    console.log("invokeStore",invokeStore)
   };
 
   var getBuffer = function () {

@@ -1,11 +1,44 @@
+var bacnet = require('./bacstack/index');
 var bacnetenum = require('./bacstack/index').enum;
 var benum = require('./bacstack/lib/bacnet-enum');
 var xmlbuilder = require("xmlbuilder");
 var bacnetdevice = require("./bacnet-device")
+var dateFormat = require('dateformat');
 var fs = require('fs-extra')
 
+getWhoIsData(3000, function (err,data) {
+    console.log(arguments)
+})
+function getWhoIsData(adpuTimeout, callback) {
+    var resData = [];
+    var whoIsCount = 2;
+    var client = new bacnet({
+        adpuTimeout: adpuTimeout
+    });
+    var intval = setInterval(function () {
+        client.whoIs()
+    }, adpuTimeout)
+    setTimeout(function () {
+        clearInterval(intval)
+        client.close()
+        callback(null, resData);
+    }, adpuTimeout * (whoIsCount + 2))
+    var deviceCount = 0;
+    BACnetIAm(client, null, function (device) {
+       
+        deviceCount++;
+        client.timeSync(device.address, new Date(), true);
+        new bacnetdevice.BACnetDevice(device, function (err, bacnetdevice) {
+            if (!err) {
+                resData.push(bacnetdevice.getWhoIsData())
+                //callback(null,resData)
+            }
+        })
+    })
+}
+exports.getWhoIsData = getWhoIsData;
 // var propertys = ['OBJECT_ACCUMULATOR', 'OBJECT_ANALOG_INPUT', 'OBJECT_ANALOG_OUTPUT', 'OBJECT_ANALOG_VALUE', 'OBJECT_AVERAGING', 'OBJECT_BINARY_INPUT', 'OBJECT_BINARY_OUTPUT', 'OBJECT_BINARY_VALUE', 'OBJECT_CALENDAR', 'OBJECT_COMMAND', 'OBJECT_EVENT_ENROLLMENT', 'OBJECT_FILE', 'OBJECT_GROUP', 'OBJECT_LOOP', 'OBJECT_LIFE_SAFETY_POINT', 'OBJECT_LIFE_SAFETY_ZONE', 'OBJECT_MULTI_STATE_INPUT', 'OBJECT_MULTI_STATE_OUTPUT', 'OBJECT_MULTI_STATE_VALUE', 'OBJECT_NOTIFICATION_CLASS', 'OBJECT_PROGRAM', 'OBJECT_PULSE_CONVERTER', 'OBJECT_SCHEDULE', 'OBJECT_TRENDLOG'];
-// var devices = ["1103", "1031"];
+// var devices = ["1031"];
 // generateBACnetXml(null, devices, propertys, function (err, id, message, status) {
 //     console.log(arguments)
 // })
@@ -323,10 +356,11 @@ function PROP_PROTOCOL_REVISION(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
 function PROP_PROTOCOL_SERVICES_SUPPORTED(obj) {//待修改
-    return PROP_OBJECT_TYPE(obj);
+    var res = PROP_OBJECT_TYPE(obj);
+    return "BitString:" + Bytes2Str(res.value)
 }
 function PROP_PROTOCOL_OBJECT_TYPES_SUPPORTED(obj) {//待修改
-    return PROP_OBJECT_TYPE(obj);
+    return PROP_PROTOCOL_SERVICES_SUPPORTED(obj)
 }
 function PROP_MAX_APDU_LENGTH_ACCEPTED(obj) {
     return PROP_OBJECT_TYPE(obj);
@@ -356,14 +390,15 @@ function PROP_DESCRIPTION(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
 function PROP_LOCAL_TIME(obj) {
-    return PROP_OBJECT_TYPE(obj);
+    return dateFormat(PROP_OBJECT_TYPE(obj), "yyyy-mm-dd HH:MM:ss l")
+}
+function PROP_LOCAL_DATE(obj) {
+    return dateFormat(PROP_OBJECT_TYPE(obj), "yyyy-mm-dd HH:MM:ss l")
 }
 function PROP_UTC_OFFSET(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
-function PROP_LOCAL_DATE(obj) {
-    return PROP_OBJECT_TYPE(obj);
-}
+
 function PROP_DAYLIGHT_SAVINGS_STATUS(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
@@ -374,4 +409,15 @@ function PROP_ACTIVE_COV_SUBSCRIPTIONS(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
 
+function Bytes2Str(arr) {
+    var str = "";
+    for (var i = 0; i < arr.length; i++) {
+        var tmp = arr[i].toString(16);
+        if (tmp.length == 1) {
+            tmp = "0" + tmp;
+        }
+        str += tmp.toUpperCase();
+    }
+    return str;
+}
 exports.searchProperty = searchProperty;

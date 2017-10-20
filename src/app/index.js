@@ -17,7 +17,7 @@ var menu = new nw.Menu({
 // Create a submenu as the 2nd level menu
 var submenu = new nw.Menu();
 var menu1 = new nw.MenuItem({
-    label: 'QB BACnet Discovery Wizard...'
+    label: 'BACnet Discovery Wizard...'
 })
 
 menu1.click = function () {
@@ -29,13 +29,13 @@ menu1.click = function () {
     }
 }
 var menu2 = new nw.MenuItem({
-    label: 'QB Modbus Configuration Wizard...',
+    label: 'Modbus Configuration Wizard...',
 })
 var menu3 = new nw.MenuItem({
     label: 'About...'
 })
 menu3.click = function () {
-    alert("SmartIO I1000 Quick Builder Tools")
+    alert("i1000 Quick builder ")
 }
 submenu.append(menu1);
 submenu.append(menu2);

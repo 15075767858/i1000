@@ -6,17 +6,19 @@ var fs = require('fs')
 class BACnetDevice {
     constructor(device, callback) {
         var self = this;
+        self.devicePropertys = ["PROP_OBJECT_NAME", "PROP_OBJECT_TYPE", "PROP_SYSTEM_STATUS", "PROP_VENDOR_NAME", "PROP_VENDOR_IDENTIFIER", "PROP_MODEL_NAME", "PROP_PROTOCOL_VERSION", "PROP_FIRMWARE_REVISION", "PROP_APPLICATION_SOFTWARE_VERSION", "PROP_PROTOCOL_SERVICES_SUPPORTED", "PROP_PROTOCOL_OBJECT_TYPES_SUPPORTED", "PROP_MAX_APDU_LENGTH_ACCEPTED", "PROP_SEGMENTATION_SUPPORTED", "PROP_NUMBER_OF_APDU_RETRIES", "PROP_APDU_TIMEOUT", "PROP_DATABASE_REVISION", "PROP_MAX_MASTER", "PROP_MAX_INFO_FRAMES", "PROP_LOCAL_TIME", "PROP_LOCAL_DATE", "PROP_UTC_OFFSET", "PROP_DAYLIGHT_SAVINGS_STATUS"];
         if (typeof device == "string") {
             self.initDeviceInfo(device, function () {
                 self.initResult(callback);
             });
         } else {
-            self.device = device;
+            self.initWhoIsInfo(device)
             self.initResult(callback);
         }
     }
     generateBACnetXml(propertys, callback) {
         var self = this;
+        var obj = self.getWhoIsData()
         var device = self.device;
         callback(null, "device_" + self.deviceId, self.getObject_Name() + " Discovering object propertys ", 0)
         self.rootAddDevice(propertys, function (err, id, message, status) {
@@ -35,7 +37,7 @@ class BACnetDevice {
         let propertysLen = 0;
         var deviceXml = root.ele('device', { address: self.address, instance: self.instance, net: self.net, adr: self.adr });
         callback(null, "device_" + self.deviceId, self.getObject_Name() + " Discovering object propertys ", 0)
-
+        self.xmlDevcieAddPropertys(deviceXml)
         //迭代 AI AO BI BO ....
         self.xmlAddPropertysAll(deviceXml, propertys, callback, function () {
             callback(null, "device_" + self.deviceId, self.getObject_Name() + " Discovering object propertys ", 1)
@@ -43,6 +45,13 @@ class BACnetDevice {
             self.closeClient()
         })
         //whois device
+    }
+
+    xmlDevcieAddPropertys(deviceXml) {
+        var self = this;
+        self.devicePropertys.forEach(function (value, index) {
+            deviceXml.ele(value.substr(5, value.length).toLowerCase(), {}, self[value])
+        })
     }
     xmlAddPropertysAll(deviceXml, propertys, callback) {
         var self = this;
@@ -82,6 +91,19 @@ class BACnetDevice {
             callback()
         }
     }
+
+    getWhoIsData() {
+        var self = this;
+        var obj = {};
+        obj.address = self.device.address;
+        obj.instance = self.device.deviceId;
+        obj.net = self.net;
+        obj.adr = self.adr;
+        self.devicePropertys.forEach(function (value, index) {
+            obj[value] = self[value]
+        })
+        return obj;
+    }
     initDeviceInfo(deviceId, callback) {
         console.log("initDeviceInfo " + deviceId)
         var self = this;
@@ -90,27 +112,31 @@ class BACnetDevice {
         client.on('iAm', function (device) {
             if (device.deviceId - deviceId == 0) {
                 client.close()
-                self.device = device;
-                if (device.address) {
-                    self.address = device.address;
-                }
-                if (device.deviceId) {
-                    self.instance = device.deviceId;
-                    self.deviceId = device.deviceId;
-                }
-                if (device.npdu) {
-                    if (device.npdu.source) {
-                        if (device.npdu.source.net !== undefined) {
-                            self.net = device.npdu.source.net;
-                        }
-                        if (device.npdu.source.adr !== undefined) {
-                            self.adr = device.npdu.source.adr;
-                        }
-                    }
-                }
+                self.initWhoIsInfo(device)
                 callback(device)
             }
         })
+    }
+    initWhoIsInfo(device) {
+        var self = this;
+        self.device = device;
+        if (device.address) {
+            self.address = device.address;
+        }
+        if (device.deviceId) {
+            self.instance = device.deviceId;
+            self.deviceId = device.deviceId;
+        }
+        if (device.npdu) {
+            if (device.npdu.source) {
+                if (device.npdu.source.net !== undefined) {
+                    self.net = device.npdu.source.net;
+                }
+                if (device.npdu.source.adr !== undefined) {
+                    self.adr = device.npdu.source.adr[0];
+                }
+            }
+        }
     }
     initResult(callback) {
         console.log(callback, "initResult")
@@ -123,7 +149,6 @@ class BACnetDevice {
                     client.whoIs()
                     self.initResult(callback);
                     callback(err, null)
-
                     return
                 }
                 self.setResult(result);
@@ -137,8 +162,15 @@ class BACnetDevice {
     getResult() {
         return this.result;
     }
+
     setResult(result) {
-        this.result = result;
+        var self = this;
+        self.result = result;
+        self.devicePropertys.forEach(function (property, index, arr) {
+            var value = bacnetutil.searchProperty(result, bacnetenum.BacnetPropertyIds[property])
+            console.log(value)
+            self[property] = value;
+        })
         return this;
     }
     setClient(client) {
@@ -149,7 +181,7 @@ class BACnetDevice {
         if (this.client) {
             return this.client;
         } else {
-            var client = new bacnet(opt);
+            var client = new bacnet(opt||{adpuTimeout:10000});
             this.client = client;
             return this.client;
         }
