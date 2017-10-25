@@ -8,6 +8,7 @@
         "icon": "assets/logo1.png"
     },
     "devDependencies": {
+        "dateformat": "^3.0.2",
         "nw-builder": "^3.4.1",
         "nw": "^0.25.2",
         "express": "^4.16.2",

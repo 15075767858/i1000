@@ -618,3 +618,113 @@ Ext.define("ConfigBACnet", {
         html: "9"
     },]
 })
+
+Ext.define("BACnetDownLoadFile", {
+    extend: "Ext.window.Window",
+    resizeable:false,
+    title: "Download File!!! Operate Carefully!!!",
+    autoShow: true,
+    width: 500,
+    height: 350,
+    resizable: false,
+    layout: 'card',
+    id: "BACnetDownLoadFile",
+    viewModel: {
+        data: {
+            info: "aaa"
+        }
+    },
+    items: {
+        margin: "10",
+        xtype: 'fieldset',
+        columnWidth: 0.5,
+        items: {
+            border: 0,
+            defaults: {
+                border: 0,
+                margin:"10 0 0 0"
+            },
+            xtype: "form",
+            items: [
+                {
+                    fieldLabel: "Choose File Type",
+                    xtype: "combo",
+                    displayField: 'name',
+                    valueField: 'value',
+                    width: "100%",
+                    labelWidth: 166,
+                    store: {
+                        fields: ["name", "value"],
+                        data: [
+                            { name: "1、Program File", value: "" },
+                            { name: "2、Config File", value: "" },
+                            { name: "3、Firmware File", value: "" }
+                        ]
+                    }
+                },
+                {
+                    layout: "hbox",
+                    margin: "5 0 0 0",
+                    items: [
+                        {
+                            xtype: 'checkbox',
+                            fieldLabel: "Choose Devide:",
+                            labelWidth: 151,
+                            inputValue: true,
+                        },
+                        {
+                            xtype: "combo",
+                            width: 275,
+                        }
+                    ]
+                },
+                {
+                    margin: "5 0 0 0",
+                    items: [
+                        {
+                            xtype: "filefield",
+                            labelWidth: 166,
+                            width: "100%",
+                            fieldLabel: "Choose File:"
+                        }
+                    ]
+                },
+                {
+                    maigin: "30 0",
+                    layout: "hbox",
+                    defaults: {
+                        width:198,
+                    },
+                    items: [
+                        {
+                            scale: "large",
+                            xtype: "button",
+                            text: "Start Download",
+                            margin:"0 50 0 0"
+                        }, {
+                            scale: "large",
+                            xtype: "button",
+                            text: "Exit",
+                        }
+                    ]
+                }, {
+                    border: 1,
+                    width: "100%",
+                    maigin: "10 0",
+                    xtype: "progressbar"
+                }, {
+                    maigin: "10 0",
+                    border: 1,
+                    height:88,
+                    bind: {
+                        html: "{info}"
+                    }
+                }
+            ]
+        }
+    }
+})
+
+Ext.onReady(function () {
+    Ext.create("BACnetDownLoadFile")
+})
