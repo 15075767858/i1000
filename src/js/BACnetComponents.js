@@ -13,9 +13,15 @@ Ext.define("ConfigBACnet", {
             selectDevices: [],
             currentDevice: 0,
             errormessage: "",
+
             page2: [
 
             ]
+        }
+    },
+    listeners: {
+        boxready: function (win) {
+            win.viewModel.set("selectFacilty", Ext.getCmp("mainPanel").projectPath.dir + "\\facilty")
         }
     },
     buttons: [{
@@ -33,6 +39,7 @@ Ext.define("ConfigBACnet", {
         handler: function () {
             var win = this.up("window")
             if (this.text == "Finsh") {
+                iFile.copyBacnetConfigXml(win.down("#selectFacilty").getValue())
                 win.close()
             } else {
                 win.showNext()
@@ -122,6 +129,7 @@ Ext.define("ConfigBACnet", {
             me.down('#card-next').setText("Finsh");
             var devicesLen = devices.length
 
+
             bacnetutil.generateBACnetXml(null, devices, propertys,
                 function (err, id, message, status) {
                     if (err) {
@@ -141,7 +149,6 @@ Ext.define("ConfigBACnet", {
                             if (currentDevice == devicesLen) {
                                 me.viewModel.set("errormessage", "Discovery has been successful .");
                                 me.down('#card-next').setDisabled(false);
-
                             }
                             else {
                                 //    me.down('#card-next').setDisabled(true);
@@ -238,11 +245,49 @@ Ext.define("ConfigBACnet", {
             items: [{
                 xtype: "textfield",
                 fieldLabel: "Assign Location",
-                value: "facilty",
+                itemId: "selectFacilty",
+                bind: {
+                    value: "{selectFacilty}"
+                },
                 width: 500
             }, {
                 xtype: "button",
-                text: "..."
+                text: "...",
+                handler: function () {
+                    var me = this.up("window")
+                    var mainPanel = Ext.getCmp("mainPanel")
+
+                    var selectFileTree = mainPanel.getFaciltyTree()
+                    var win = Ext.create("Ext.window.Window", {
+                        autoShow: true,
+                        width: 200,
+                        height: 600,
+                        autoScroll: true,
+                        items: [
+                            selectFileTree
+                        ],
+                        buttons: [
+                            {
+                                text: "Select",
+                                handler: function () {
+                                    var selectArr = selectFileTree.getSelection();
+                                    console.log(selectArr)
+                                    if (!selectArr[0]) {
+                                        Ext.Msg.alert("Massage", "Please select a Folder .");
+                                    } else {
+                                        me.down("#selectFacilty").setValue(selectArr[0].data.path)
+                                    }
+                                }
+                            }, {
+                                text: "Cancel",
+                                handler: function () {
+                                    win.close();
+                                }
+                            }
+                        ]
+                    })
+
+                }
             }]
         },
         {
@@ -272,35 +317,6 @@ Ext.define("ConfigBACnet", {
             region: "center",
             xtype: "grid",
             itemId: "WhoIsDeviceGrid",
-            // selModel: {
-            //     type: 'checkboxmodel',
-            // },
-            // { address: '192.168.253.253',
-            // instance: 1103,
-            // net: 1100,
-            // adr: 3,
-            // PROP_OBJECT_NAME: 'Controller',
-            // PROP_OBJECT_TYPE: 8,
-            // PROP_SYSTEM_STATUS: 0,
-            // PROP_VENDOR_NAME: '1000BAS',
-            // PROP_VENDOR_IDENTIFIER: 913,
-            // PROP_MODEL_NAME: 'PIO',
-            // PROP_PROTOCOL_VERSION: '0.8.2',
-            // PROP_FIRMWARE_REVISION: '1.3.0',
-            // PROP_APPLICATION_SOFTWARE_VERSION: '1.0',
-            // PROP_PROTOCOL_SERVICES_SUPPORTED: 'BitString:E9D10104D7',
-            // PROP_PROTOCOL_OBJECT_TYPES_SUPPORTED: 'BitString:9B850000000000',
-            // PROP_MAX_APDU_LENGTH_ACCEPTED: 480,
-            // PROP_SEGMENTATION_SUPPORTED: 0,
-            // PROP_NUMBER_OF_APDU_RETRIES: 3,
-            // PROP_APDU_TIMEOUT: 6000,
-            // PROP_DATABASE_REVISION: 2,
-            // PROP_MAX_MASTER: 64,
-            // PROP_MAX_INFO_FRAMES: 32,
-            // PROP_LOCAL_TIME: '1901-02-02 04:40:32 000',
-            // PROP_LOCAL_DATE: '2017-10-20 00:00:00 000',
-            // PROP_UTC_OFFSET: 480,
-            // PROP_DAYLIGHT_SAVINGS_STATUS: false } ] }
             listeners: {
                 selectionchange: function (check, selected, eOpts) {
                     var win = this.up("window");
@@ -429,80 +445,81 @@ Ext.define("ConfigBACnet", {
                     items[i].setValue(value)
                 }
             },
-            items: [{
-                boxLabel: "Accumulator",
-                name: "OBJECT_ACCUMULATOR"
-            },
-            {
-                boxLabel: "Analog Input",
-                name: "OBJECT_ANALOG_INPUT"
-            }, {
-                boxLabel: "Analog Output",
-                name: "OBJECT_ANALOG_OUTPUT"
-            }, {
-                boxLabel: "Analog Value",
-                name: "OBJECT_ANALOG_VALUE"
-            }, {
-                boxLabel: "Averaging",
-                name: "OBJECT_AVERAGING"
-            }, {
-                boxLabel: "Binary Input",
-                name: "OBJECT_BINARY_INPUT"
-            }, {
-                boxLabel: "Binary Output",
-                name: "OBJECT_BINARY_OUTPUT"
-            }, {
-                boxLabel: "Binary Value",
-                name: "OBJECT_BINARY_VALUE"
-            }, {
-                boxLabel: "Calendar",
-                name: "OBJECT_CALENDAR"
-            }, {
-                boxLabel: "Command",
-                name: "OBJECT_COMMAND"
-            }, {
-                boxLabel: "Event Enrollment",
-                name: "OBJECT_EVENT_ENROLLMENT"
-            }, {
-                boxLabel: "File",
-                name: "OBJECT_FILE"
-            }, {
-                boxLabel: "Group",
-                name: "OBJECT_GROUP"
-            }, {
-                boxLabel: "Loop",
-                name: "OBJECT_LOOP"
-            }, {
-                boxLabel: "Life Safety Point",
-                name: "OBJECT_LIFE_SAFETY_POINT"
-            }, {
-                boxLabel: "Life Safety Zone",
-                name: "OBJECT_LIFE_SAFETY_ZONE"
-            }, {
-                boxLabel: "Multistate Input",
-                name: "OBJECT_MULTI_STATE_INPUT"
-            }, {
-                boxLabel: "Multistate Output",
-                name: "OBJECT_MULTI_STATE_OUTPUT"
-            }, {
-                boxLabel: "Multistate Value",
-                name: "OBJECT_MULTI_STATE_VALUE"
-            }, {
-                boxLabel: "Notification Class",
-                name: "OBJECT_NOTIFICATION_CLASS"
-            }, {
-                boxLabel: "Program",
-                name: "OBJECT_PROGRAM"
-            }, {
-                boxLabel: "Pulse Converter",
-                name: "OBJECT_PULSE_CONVERTER"
-            }, {
-                boxLabel: "Schedule",
-                name: "OBJECT_SCHEDULE"
-            }, {
-                boxLabel: "Trendlog",
-                name: "OBJECT_TRENDLOG"
-            },
+            items: [
+                {
+                    boxLabel: "Accumulator",
+                    name: "OBJECT_ACCUMULATOR"
+                },
+                {
+                    boxLabel: "Analog Input",
+                    name: "OBJECT_ANALOG_INPUT"
+                }, {
+                    boxLabel: "Analog Output",
+                    name: "OBJECT_ANALOG_OUTPUT"
+                }, {
+                    boxLabel: "Analog Value",
+                    name: "OBJECT_ANALOG_VALUE"
+                }, {
+                    boxLabel: "Averaging",
+                    name: "OBJECT_AVERAGING"
+                }, {
+                    boxLabel: "Binary Input",
+                    name: "OBJECT_BINARY_INPUT"
+                }, {
+                    boxLabel: "Binary Output",
+                    name: "OBJECT_BINARY_OUTPUT"
+                }, {
+                    boxLabel: "Binary Value",
+                    name: "OBJECT_BINARY_VALUE"
+                }, {
+                    boxLabel: "Calendar",
+                    name: "OBJECT_CALENDAR"
+                }, {
+                    boxLabel: "Command",
+                    name: "OBJECT_COMMAND"
+                }, {
+                    boxLabel: "Event Enrollment",
+                    name: "OBJECT_EVENT_ENROLLMENT"
+                }, {
+                    boxLabel: "File",
+                    name: "OBJECT_FILE"
+                }, {
+                    boxLabel: "Group",
+                    name: "OBJECT_GROUP"
+                }, {
+                    boxLabel: "Loop",
+                    name: "OBJECT_LOOP"
+                }, {
+                    boxLabel: "Life Safety Point",
+                    name: "OBJECT_LIFE_SAFETY_POINT"
+                }, {
+                    boxLabel: "Life Safety Zone",
+                    name: "OBJECT_LIFE_SAFETY_ZONE"
+                }, {
+                    boxLabel: "Multistate Input",
+                    name: "OBJECT_MULTI_STATE_INPUT"
+                }, {
+                    boxLabel: "Multistate Output",
+                    name: "OBJECT_MULTI_STATE_OUTPUT"
+                }, {
+                    boxLabel: "Multistate Value",
+                    name: "OBJECT_MULTI_STATE_VALUE"
+                }, {
+                    boxLabel: "Notification Class",
+                    name: "OBJECT_NOTIFICATION_CLASS"
+                }, {
+                    boxLabel: "Program",
+                    name: "OBJECT_PROGRAM"
+                }, {
+                    boxLabel: "Pulse Converter",
+                    name: "OBJECT_PULSE_CONVERTER"
+                }, {
+                    boxLabel: "Schedule",
+                    name: "OBJECT_SCHEDULE"
+                }, {
+                    boxLabel: "Trendlog",
+                    name: "OBJECT_TRENDLOG"
+                },
             ]
         },
         {
@@ -621,7 +638,7 @@ Ext.define("ConfigBACnet", {
 
 Ext.define("BACnetDownLoadFile", {
     extend: "Ext.window.Window",
-    resizeable:false,
+    resizeable: false,
     title: "Download File!!! Operate Carefully!!!",
     autoShow: true,
     width: 500,
@@ -642,7 +659,7 @@ Ext.define("BACnetDownLoadFile", {
             border: 0,
             defaults: {
                 border: 0,
-                margin:"10 0 0 0"
+                margin: "10 0 0 0"
             },
             xtype: "form",
             items: [
@@ -693,14 +710,14 @@ Ext.define("BACnetDownLoadFile", {
                     maigin: "30 0",
                     layout: "hbox",
                     defaults: {
-                        width:198,
+                        width: 198,
                     },
                     items: [
                         {
                             scale: "large",
                             xtype: "button",
                             text: "Start Download",
-                            margin:"0 50 0 0"
+                            margin: "0 50 0 0"
                         }, {
                             scale: "large",
                             xtype: "button",
@@ -715,7 +732,7 @@ Ext.define("BACnetDownLoadFile", {
                 }, {
                     maigin: "10 0",
                     border: 1,
-                    height:88,
+                    height: 88,
                     bind: {
                         html: "{info}"
                     }
@@ -725,6 +742,227 @@ Ext.define("BACnetDownLoadFile", {
     }
 })
 
+Ext.define("MainPanel", {
+    extend: "Ext.panel.Panel",
+    id: "mainPanel",
+    title: "",
+    renderTo: Ext.getBody(),
+    width: "100%",
+    height: "100%",
+    layout: "border",
+    loadProject: function (path) {
+        var me = this;
+        var res = iFile.loadProject(path);
+        if (res.projectPath.ext == ".iqb") {
+            me.isOpenProject = true;
+            me.projectPath = res.projectPath;
+            me.projectInfo = res.projectInfo;
+            me.setTitle(res.projectPath.base);
+            //me.selectFileTree = selectFileTree;
+            var FaciltyTree = me.getFaciltyTree()
+            var pointGrid = Ext.create("PointGrid", {
+                region: "center",
+            })
+            FaciltyTree.addListener("itemclick",function(treeview,record){
+                pointGrid.loadProject(record.data.path)
+            })
+            me.add([
+                FaciltyTree,
+                pointGrid
+            ])
+            //var data = new iFile.FileTree().setAsyncView(true).setViewExtname([]).getTreeChilds(me.projectPath.dir)
+            //me.selectFileTree.store.setData(data)
+        }
+    },
+    getFaciltyTree: function () {
+        var mainPanel = this;
+        var SelectFileTree = Ext.create("SelectFileTree", {
+            viewExtname: [],
+            region: "west",
+            width: 190,
+            resizable: true,
+            rootVisible: true
+        })
+        var projectPath = mainPanel.projectPath.dir + "\\facilty"
+        var data = new iFile.FileTree().setAsyncView(true).setViewExtname([]).getTreeChilds(projectPath);
+        var store = Ext.create('Ext.data.TreeStore', {
+            root: {
+                text: "facilty",
+                path: projectPath,
+                expanded: true,
+                children: data
+            }
+        });
+        SelectFileTree.setStore(store);
+        return SelectFileTree;
+    },
+    // initComponent: function () {
+    //     var me = this;
+    //     var selectFileTree = Ext.create("SelectFileTree", {
+    //         viewExtname: [],
+    //         region: "west",
+    //         width: 190,
+    //         resizable: true
+    //     })
+    //     me.selectFileTree = selectFileTree
+    //     me.items = [
+    //         me.getFaciltyTree(),
+    //         //selectFileTree,
+    //         {
+    //             region: "center",
+    //         }
+    //     ]
+    //     me.callParent();
+    // }
+})
+
+
+Ext.define("SelectFileTree", {
+    extend: "Ext.tree.TreePanel",
+    width: "100%",
+    height: "100%",
+    asyncView: false,//true 显示所有 false异步显示
+    viewExtname: false, //[".jpg",".xml"]
+    rootVisible: false,
+    reloadFolder: function (record) {
+        var tree = this;
+        if (record.data.path) {
+            var data = new iFile.FileTree().setAsyncView(tree.asyncView).setViewExtname(tree.viewExtname).getTreeChilds(record.data.path)
+            record.appendChild(data)
+        }
+    },
+    listeners: {
+        itemexpand: function (record) {
+            this.reloadFolder(record)
+        },
+        itemcollapse: function (record) {
+            record.removeAll()
+        },
+        itemcontextmenu: function (tree, record, item, index, e, eOpts) {
+            e.stopEvent();
+            var self = this;
+            console.log(arguments)
+            if (record.data.leaf) //folder
+            {
+                console.log(record.data.leaf)
+            } else {
+                Ext.create("Ext.menu.Menu", {
+                    autoShow: true,
+                    x: e.pageX + 5,
+                    y: e.pageY + 5,
+                    items: [{
+                        text: "Create Folder",
+                        handler: function () {
+                            Ext.Msg.prompt('Create Folder', 'Please enter Folder name:', function (btn, text) {
+                                if (btn == 'ok') {
+                                    if (text) {
+                                        iFile.createFolder(record.data.path + "/" + text)
+                                        self.reloadFolder(record)
+                                    }
+                                    // process text value and close...
+                                }
+                            });
+                        }
+                    }, {
+                        text: "Rename",
+                        handler: function () {
+                            Ext.Msg.prompt('Create Folder', 'Please enter Folder name:', function (btn, text) {
+                                if (btn == 'ok') {
+                                    if (text) {
+                                        iFile.renameFile(record.data.path, text)
+                                        self.reloadFolder(record.parentNode)
+                                    }
+                                    // process text value and close...
+                                }
+                            });
+                        }
+                    }]
+                })
+                console.log(record.data.leaf)
+            }
+        }
+    }
+})
+
+
+Ext.define("SelectFileWindow", {
+    extend: "Ext.window.Window",
+    autoShow: true,
+    width: 600,
+    height: 600,
+    filePath: false,
+    autoScroll: true,
+    initComponent: function () {
+        var me = this;
+        var selectFileTree = Ext.create("SelectFileTree", {
+            viewExtname: me.viewExtname || "*"
+        })
+        new iFile.FileTree().getRootLetter(function (arr) {
+            console.log(arr)
+            var store = Ext.create('Ext.data.TreeStore', {
+                root: {
+                    expanded: true,
+                    children: arr
+                }
+            })
+            selectFileTree.setStore(store)
+        })
+        me.items = selectFileTree;
+        var buttons = [
+            {
+                text: "Select",
+                handler: function () {
+                    var selectArr = selectFileTree.getSelection();
+                    console.log(selectArr)
+                    if (!selectArr[0]) {
+                        Ext.Msg.alert("Massage", "Please select a Folder .");
+                    } else {
+                        me.callback(selectArr)
+                    }
+                }
+            }, {
+                text: "Cancel",
+                handler: function () {
+                    me.close();
+                }
+            }
+        ]
+        me.buttons = buttons;
+        me.callParent()
+    }
+
+})
+
+Ext.define("PointGrid", {
+    extend: "Ext.grid.Panel",
+    store: {
+        fields: ["object_name", "description", "location"],
+    },
+    loadProject: function (path) {
+        var me = this;
+        iFile.loadBacnetXmlData(path, function (arr) {
+            me.store.setData(arr)
+        })
+    },
+    columns: [
+        {
+            text: "Object Name",
+            dataIndex: "object_name",
+            flex: 1
+        }, {
+            text: "Description",
+            dataIndex: "description",
+            flex: 1
+        }, {
+            text: "Location",
+            dataIndex: "location",
+            flex: 1,
+            hidden: true
+        }
+    ]
+})
+
 Ext.onReady(function () {
-    Ext.create("BACnetDownLoadFile")
+
+
 })

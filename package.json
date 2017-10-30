@@ -9,7 +9,7 @@
     "start": "nw",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nw  src/",
-    "prod": "nwbuild --platforms win32  --buildDir dist/ src/ && \"E:/i1000/dist/i1000 Quick builder/win32/i1000 Quick builder.exe\"",
+    "prod": "nwbuild --platforms win32  --buildDir dist/ src/ && \"F:/i1000/dist/i1000 Quick builder/win32/i1000 Quick builder.exe\"",
     "debug": "nw --remote-debugging-port=9222"
   },
   "author": "",

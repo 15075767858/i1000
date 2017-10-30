@@ -6,9 +6,9 @@ var bacnetdevice = require("./bacnet-device")
 var dateFormat = require('dateformat');
 var fs = require('fs-extra')
 
-getWhoIsData(3000, function (err,data) {
-    console.log(arguments)
-})
+// getWhoIsData(3000, function (err,data) {
+//     console.log(arguments)
+// })
 function getWhoIsData(adpuTimeout, callback) {
     var resData = [];
     var whoIsCount = 2;
