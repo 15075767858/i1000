@@ -46,7 +46,6 @@ class BACnetDevice {
         })
         //whois device
     }
-
     xmlDevcieAddPropertys(deviceXml) {
         var self = this;
         self.devicePropertys.forEach(function (value, index) {
@@ -91,7 +90,6 @@ class BACnetDevice {
             callback()
         }
     }
-
     getWhoIsData() {
         var self = this;
         var obj = {};
@@ -168,7 +166,7 @@ class BACnetDevice {
         self.result = result;
         self.devicePropertys.forEach(function (property, index, arr) {
             var value = bacnetutil.searchProperty(result, bacnetenum.BacnetPropertyIds[property])
-            console.log(value)
+            //console.log(value)
             self[property] = value;
         })
         return this;
@@ -181,7 +179,7 @@ class BACnetDevice {
         if (this.client) {
             return this.client;
         } else {
-            var client = new bacnet(opt||{adpuTimeout:10000});
+            var client = new bacnet(opt || { adpuTimeout: 10000 });
             this.client = client;
             return this.client;
         }
@@ -198,6 +196,9 @@ class BACnetDevice {
     }
     getInfo(device) {
     }
+    
+
+
 }
 exports.BACnetDevice = BACnetDevice;
 

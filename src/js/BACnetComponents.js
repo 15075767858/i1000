@@ -648,7 +648,8 @@ Ext.define("BACnetDownLoadFile", {
     id: "BACnetDownLoadFile",
     viewModel: {
         data: {
-            info: "aaa"
+            fileInstance: 0,
+            info: "Before Download File ,Please Ensure Communication Clear,and Don't Make Any Read and Write Operations of Equipment,Avoid Download Failed."
         }
     },
     items: {
@@ -670,14 +671,31 @@ Ext.define("BACnetDownLoadFile", {
                     valueField: 'value',
                     width: "100%",
                     labelWidth: 166,
+                    bind: "{fileInstance}",
                     store: {
                         fields: ["name", "value"],
                         data: [
-                            { name: "1、Program File", value: "" },
-                            { name: "2、Config File", value: "" },
-                            { name: "3、Firmware File", value: "" }
+                            { name: "1、Program File", value: "1" },
+                            { name: "2、Config File", value: "2" },
+                            { name: "3、Firmware File", value: "3" }
                         ]
+                    },
+                    listeners: {
+                        change: function (field, newValue) {
+                            var viewModel = field.up("window").viewModel
+                            switch (newValue) {
+                                case "1":
+                                    viewModel.set("info", "You have Chosen to Download the Program File. Please Continue to Select the Device You Need to Download! If You do not Need Check File,Select in the Checkbox Below.");
+                                case "2":
+                                    viewModel.set("info", "You have Chosen to Download the Program File. Please Continue to Select the Device You Need to Download! If You do not Need Check File,Select in the Checkbox Below.");
+                                case "3":
+                                    viewModel.set("info", "You have Chosen to Upgrade Firmware. Please Continue to Select the Device You Need to Upgrade!");
+                            }
+
+                            console.log(arguments)
+                        }
                     }
+
                 },
                 {
                     layout: "hbox",
@@ -688,10 +706,83 @@ Ext.define("BACnetDownLoadFile", {
                             fieldLabel: "Choose Devide:",
                             labelWidth: 151,
                             inputValue: true,
+                            uncheckedValue: false,
+                            listeners: {
+                                change: function (field, newValue) {
+                                    var viewModel = field.up("window").viewModel;
+                                    var fileInstance = viewModel.get("fileInstance")
+                                    if (fileInstance - 3 == 0 & newValue === true) {
+                                        Ext.MessageBox.show({
+                                            title: "Download File",
+                                            msg: 'Firmware Update Must Check Model-Name & Firmware_Version!',
+                                            buttons: Ext.MessageBox.OK,
+                                            scope: this,
+                                            fn: function () {
+                                                field.setValue(false)
+                                            },
+                                            icon: Ext.MessageBox.ERROR,
+                                        });
+                                    } else {
+                                        viewModel.set("info", "When You Choose the Checkbox,The Program Will not Judge the SelectFile Instance Number!!<br>This Function is Suitable for Bulk Downloading of the Same Type of Equipment.")
+                                    }
+                                }
+                            }
                         },
                         {
                             xtype: "combo",
                             width: 275,
+                            valueField: "deviceId",
+                            displayField: "show",
+                            emptyText: "Discovering Bacnet Devices ...",
+                            disabled: true,
+                            listeners: {
+                                boxready: function (field) {
+                                    iBACnet.getWhoIsData2(3000, function (err, devices) {
+                                        if (!err) {
+                                            var store = Ext.create("Ext.data.Store", {
+                                                fields: ["deviceId", "net", "adr", {
+                                                    name: "show",
+                                                    convert: function (val, model) {
+                                                        return "Instance:" + model.data.deviceId + " NET:" + model.data.net + " MAC:" + model.data.adr
+                                                    }
+                                                }],
+                                                data: devices
+                                            })
+                                            field.setEmptyText("Discovery Bacnet Device " + devices.length)
+                                            field.setStore(store)
+                                            field.setDisabled(false)
+                                        }
+                                    })
+                                },
+                                change: function (field, newValue, oldValue) {
+                                    console.log(arguments)
+                                    new bacnetutil.bacnetdevice.BACnetDevice(newValue + "", function (err, device) {
+                                        if (err) {
+                                            Ext.MessageBox.show({
+                                                title: "Download File",
+                                                msg: 'Can Not Acquired the Selected Device Firmware-Version and Model-Name,Please Check Communication Status,Or shut down other BACnet programs ,and Try Again. ',
+                                                buttons: Ext.MessageBox.OK,
+                                                scope: this,
+                                                fn: function () {
+                                                    field.setValue(false)
+                                                },
+                                                icon: Ext.MessageBox.ERROR,
+                                            });
+                                        } else {
+                                            Ext.MessageBox.show({
+                                                title: "Download File",
+                                                msg: 'Current Select Model Name:' + device.PROP_MODEL_NAME + ',Firmware Version:' + device.PROP_FIRMWARE_REVISION + 'Please Select a Corresponding ProgramFile to Update!',
+                                                buttons: Ext.MessageBox.OK,
+                                                scope: this,
+                                                fn: function () {
+                                                },
+                                                icon: Ext.MessageBox.INFO,
+                                            });
+                                        }
+
+                                    })
+                                }
+                            }
                         }
                     ]
                 },
@@ -741,7 +832,9 @@ Ext.define("BACnetDownLoadFile", {
         }
     }
 })
-
+Ext.onReady(function () {
+    Ext.create("BACnetDownLoadFile")
+})
 Ext.define("MainPanel", {
     extend: "Ext.panel.Panel",
     id: "mainPanel",
@@ -763,7 +856,7 @@ Ext.define("MainPanel", {
             var pointGrid = Ext.create("PointGrid", {
                 region: "center",
             })
-            FaciltyTree.addListener("itemclick",function(treeview,record){
+            FaciltyTree.addListener("itemclick", function (treeview, record) {
                 pointGrid.loadProject(record.data.path)
             })
             me.add([

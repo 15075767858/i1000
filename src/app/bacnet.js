@@ -3,10 +3,65 @@ var bacnetenum = require("./bacstack/lib/bacnet-enum");
 var bacnetutil = require("./bacnetutil");
 var bacnetdevice = require("./bacnet-device")
 var xml2js = require("xml2js");
-var fs = require("fs");
+var fs = require("fs-extra");
 var xmlbuilder = require("xmlbuilder");
 
+new bacnetutil.bacnetdevice.BACnetDevice("1063", function (err, device) {
+    console.log(arguments)
+})
+var crc = require("./crc");
+// var client = new bacnet()
+// var programFile = fs.readFileSync("C:\\Users\\Administrator\\Desktop\\程序文件\\1001")
+// programFile = crc.BufferCrc16(programFile)
+// var address = { address: '192.168.253.253', net: 1100, adr: [63] }
+// client.writeFile(address, { type: 10, instance: 1 }, 0, 450, programFile, function (err, value) {
+//     console.log(err, value)
+// })
+//60340 534 
+//FF FF FF 64 EB FF FF
+//testWriteFile()
+function testWriteFile() {
 
+    var client = new bacnet({
+        adpuTimeout: 10000
+    })
+    bacnetutil.BACnetIAm(client, ["1063"], function (device) {
+        console.log(device)
+        var address = device.address;
+        if (device.npdu) {
+            if (device.npdu.source) {
+                address = { address: device.address, net: device.npdu.source.net, adr: device.npdu.source.adr };
+            }
+        }
+        console.log(address)
+        var programFile = fs.readFileSync("C:\\Users\\Administrator\\Desktop\\程序文件\\1001")
+        programFile = crc.BufferCrc16(programFile)
+        //return ;
+        client.writeProperty(address, bacnetenum.BacnetObjectTypes.OBJECT_FILE,
+            1,//实例号
+            bacnetenum.BacnetPropertyIds.PROP_FILE_SIZE,
+            0,//优先级
+            [{
+                type: 2,
+                value: programFile.length
+            }], function (err, value) {
+                if (err) {
+                    testWriteFile()
+                } else {
+                    //console.log(programFile.slice(0, 450).toJSON())
+                    client.writeFile(address, { type: 10, instance: 1 }, 0, 450, programFile.slice(0, 450), function (err, value) {
+                        console.log(err, value)
+                    })
+                }
+            })
+    })
+}
+
+
+
+function writeProperty(device, objectType, objectInstance, propertyId, priority, valueList) {
+
+}
 //test2(root, devices, propertys, 3000)
 function test2(root, devices, propertys, adpuTimeout, callback) {
     var device = devices.pop();
@@ -181,6 +236,16 @@ function getWhoIsData2(adpuTimeout, callback) {
         callback(null, resData);
     }, adpuTimeout * (whoIsCount + 2))
     bacnetutil.BACnetIAm(client, null, function (device) {
+        if (device.npdu) {
+            if (device.npdu.source) {
+                if (device.npdu.source.net !== undefined) {
+                    device.net = device.npdu.source.net;
+                }
+                if (device.npdu.source.adr !== undefined) {
+                    device.adr = device.npdu.source.adr[0];
+                }
+            }
+        }
         client.timeSync(device.address, new Date(), true);
         resData.push(device)
     })

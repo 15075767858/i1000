@@ -2,6 +2,7 @@ var fs = require("fs-extra");
 const path = require('path');
 var exec = require("child_process").exec
 var xml2js = require('xml2js');
+// 用来控制windows 文件树
 class FileTree {
     constructor(filePath) {
         this.filePath = filePath;

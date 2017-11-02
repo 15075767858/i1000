@@ -6,9 +6,11 @@ var bacnetdevice = require("./bacnet-device")
 var dateFormat = require('dateformat');
 var fs = require('fs-extra')
 
+exports.bacnetdevice=bacnetdevice;
 // getWhoIsData(3000, function (err,data) {
 //     console.log(arguments)
 // })
+
 function getWhoIsData(adpuTimeout, callback) {
     var resData = [];
     var whoIsCount = 2;
@@ -25,7 +27,7 @@ function getWhoIsData(adpuTimeout, callback) {
     }, adpuTimeout * (whoIsCount + 2))
     var deviceCount = 0;
     BACnetIAm(client, null, function (device) {
-       
+
         deviceCount++;
         client.timeSync(device.address, new Date(), true);
         new bacnetdevice.BACnetDevice(device, function (err, bacnetdevice) {
@@ -107,13 +109,19 @@ function readAllProertys(result) {
     console.log(Object_List)
     //bacnetenum.BacnetPropertyIds
 }
+// bacnetutil.readObjectInfoAll(new bacnet(), { address: "192.168.253.253", net: "1100", adr: [63] }, "1063", 8, function () {
+//     console.log(arguments)
+// })
 function readObjectInfoAll(client, address, instance, objectType, callback) {
-
+    if (!client) {
+        client = new bacnet()
+    }
     readObjectInfo(client, address, instance, objectType, bacnetenum.BacnetPropertyIds.PROP_ALL, function (err, result) {
         if (err) {
             callback(err, null);
             return;
         }
+        console.log(result)
         var resObj = {}
         for (var property in bacnetenum.BacnetPropertyIds) {
             var id = bacnetenum.BacnetPropertyIds[property];

@@ -268,12 +268,13 @@ module.exports.decodeAtomicReadFileAcknowledge = function(buffer, offset) {
   };
 };
 
+//                                             buffer  true    instance   postion        1      filebuffer 450
 module.exports.encodeAtomicWriteFile = function(buffer, isStream, objectId, position, blockCount, blocks, counts) {
   baAsn1.encodeApplicationObjectId(buffer, objectId.type, objectId.instance);
   if (isStream) {
     baAsn1.encodeOpeningTag(buffer, 0);
     baAsn1.encodeApplicationSigned(buffer, position);
-    baAsn1.encodeApplicationOctetString(buffer, blocks[0], 0, counts[0]);
+    baAsn1.encodeApplicationOctetString(buffer, blocks, 0, counts);
     baAsn1.encodeClosingTag(buffer, 0);
   } else {
     baAsn1.encodeOpeningTag(buffer, 1);

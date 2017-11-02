@@ -37,7 +37,7 @@ module.exports = function (options) {
   var BVLC_HEADER_LENGTH = 4;
 
   var invokeCounter = 1;
- 
+
 
   var lastSequenceNumber = 0;
   var segmentStore = [];
@@ -61,7 +61,7 @@ module.exports = function (options) {
   var getInvokeId = function () {
     var id = invokeCounter++;
     if (id >= 256) invokeCounter = 1;
-  
+
     return id - 1;
   };
 
@@ -74,8 +74,8 @@ module.exports = function (options) {
   };
 
   var addCallback = function (id, callback) {
-    console.log("addCallback",id,callback)
-    
+    console.log("addCallback", id, callback)
+
     var timeout = setTimeout(function () {
       delete invokeStore[id];
       callback(new Error('ERR_TIMEOUT'));
@@ -85,7 +85,7 @@ module.exports = function (options) {
       delete invokeStore[id];
       callback(err, data);
     };
-    console.log("invokeStore",invokeStore)
+    console.log("invokeStore", invokeStore)
   };
 
   var getBuffer = function () {
@@ -490,16 +490,16 @@ module.exports = function (options) {
    * });
    */
   self.writeProperty = function (address, objectType, objectInstance, propertyId, priority, valueList, next) {
-    var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
+    var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG0;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE | baEnum.BacnetNpduControls.EXPECTING_REPLY, address, null, DEFAULT_HOP_COUNT, baEnum.BacnetNetworkMessageTypes.NETWORK_MESSAGE_WHO_IS_ROUTER_TO_NETWORK, 0);
     baAdpu.encodeConfirmedServiceRequest(buffer, baEnum.BacnetPduTypes.PDU_TYPE_CONFIRMED_SERVICE_REQUEST, baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_WRITE_PROPERTY, maxSegments, baEnum.BacnetMaxAdpu.MAX_APDU1476, invokeId, 0, 0);
     baServices.encodeWriteProperty(buffer, objectType, objectInstance, propertyId, baAsn1.BACNET_ARRAY_ALL, priority, valueList);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
-    transport.send(buffer.buffer, buffer.offset, address);
+    transport.send(buffer.buffer, buffer.offset, address.address || address);
     addCallback(invokeId, function (err, data) {
-      next(err);
+      next(err, data);
     });
   };
 
@@ -648,14 +648,19 @@ module.exports = function (options) {
   };
 
   self.writeFile = function (address, objectId, position, count, fileBuffer, next) {
-    var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG65;
+    var maxSegments = baEnum.BacnetMaxSegments.MAX_SEG0;
     var buffer = getBuffer();
     var invokeId = getInvokeId();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE | baEnum.BacnetNpduControls.EXPECTING_REPLY, address);
-    baAdpu.encodeConfirmedServiceRequest(buffer, baEnum.BacnetPduTypes.PDU_TYPE_CONFIRMED_SERVICE_REQUEST, baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_ATOMIC_WRITE_FILE, maxSegments, baEnum.BacnetMaxAdpu.MAX_APDU1476, invokeId, 0, 0);
+    baAdpu.encodeConfirmedServiceRequest(buffer,
+      baEnum.BacnetPduTypes.PDU_TYPE_CONFIRMED_SERVICE_REQUEST | ((count < fileBuffer.length) ? 0 : baEnum.BacnetPduTypes.MORE_FOLLOWS),
+      baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_ATOMIC_WRITE_FILE,
+      maxSegments,
+      baEnum.BacnetMaxAdpu.MAX_APDU1476,
+      invokeId, 0, 0);
     baServices.encodeAtomicWriteFile(buffer, true, objectId, position, 1, fileBuffer, count);
     baBvlc.encode(buffer.buffer, baEnum.BacnetBvlcFunctions.BVLC_ORIGINAL_UNICAST_NPDU, buffer.offset);
-    transport.send(buffer.buffer, buffer.offset, address);
+    transport.send(buffer.buffer, buffer.offset, address.address || address);
     addCallback(invokeId, function (err, data) {
       if (err) return next(err);
       var result = baServices.decodeAtomicWriteFileAcknowledge(data.buffer, data.offset, data.length);
