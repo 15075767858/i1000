@@ -5,11 +5,12 @@ var bacnetdevice = require("./bacnet-device")
 var xml2js = require("xml2js");
 var fs = require("fs-extra");
 var xmlbuilder = require("xmlbuilder");
-
-new bacnetutil.bacnetdevice.BACnetDevice("1063", function (err, device) {
-    console.log(arguments)
-})
 var crc = require("./crc");
+
+// new bacnetutil.bacnetdevice.BACnetDevice("1063", function (err, device) {
+//     console.log(arguments)
+// })
+
 // var client = new bacnet()
 // var programFile = fs.readFileSync("C:\\Users\\Administrator\\Desktop\\程序文件\\1001")
 // programFile = crc.BufferCrc16(programFile)
@@ -56,7 +57,6 @@ function testWriteFile() {
             })
     })
 }
-
 
 
 function writeProperty(device, objectType, objectInstance, propertyId, priority, valueList) {
@@ -234,7 +234,7 @@ function getWhoIsData2(adpuTimeout, callback) {
         clearInterval(intval)
         client.close()
         callback(null, resData);
-    }, adpuTimeout * (whoIsCount + 2))
+    }, adpuTimeout * (whoIsCount + 1))
     bacnetutil.BACnetIAm(client, null, function (device) {
         if (device.npdu) {
             if (device.npdu.source) {

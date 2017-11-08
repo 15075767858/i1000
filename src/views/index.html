@@ -11,7 +11,6 @@
             margin: 0;
             padding: 0;
         }
-
         html,
         body,
         iframe {
@@ -32,33 +31,13 @@
     <script src="../js/ext-all.js"></script>
     <script src="../js/charts.js"></script>
     <script src="../js/ext-component.js"></script>
-
     <script src="../app/index.js"></script>
-    <script src="../app/menu.js"></script>
+    <!-- <script src="../app/menu.js"></script> -->
     <script src="../js/BACnetComponents.js"></script>
 
 </body>
 <script>
-    window.onresize = function () {
-        console.log(arguments)
-    }
-
-    function openIframeSrc(src) {
-        Ext.getCmp("mainPanel").hide()
-        var f = document.getElementById("iframe")
-        if (f) {
-            f.src = src;
-        } else {
-            f = document.createElement("iframe");
-            f.id = 'bodyframe'
-            f.src = src;
-            f.style.height = document.body.height;
-            document.body.appendChild(f)
-        }
-    }
-    Ext.onReady(function () {
-        Ext.create("MainPanel")
-    })
+   
 </script>
 
 </html>

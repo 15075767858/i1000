@@ -72,7 +72,7 @@ function getFileMenu() {
     var openMenu = new nw.MenuItem({
         label: 'Open Workspace',
         click: function () {
-            
+
             Ext.create("SelectFileWindow", {
                 title: "Open Workspace",
                 filePath: "",
@@ -102,36 +102,7 @@ function getFileMenu() {
         submenu: tools
     })
 }
-function getMainMenu() {
-    var localhref = location.href;
-    var indexMenu = new nw.MenuItem({
-        label: 'Home',
-        click: function () {
-            location.href = localhref
-        }
-    })
-    var programMenu = new nw.MenuItem({
-        label: 'program',
-        click: function () {
-            openIframeSrc("http://127.0.0.1/program")
-        }
-    })
-    var graphMenu = new nw.MenuItem({
-        label: 'Graph',
-        click: function () {
-            openIframeSrc("http://127.0.0.1/graph")
-        }
-    })
 
-    var tools = new nw.Menu();
-    tools.append(indexMenu);
-    tools.append(programMenu);
-    tools.append(graphMenu);
-    return new nw.MenuItem({
-        label: 'Menu',
-        submenu: tools
-    })
-}
 function getToolsMenu() {
     var downloadfile = new nw.MenuItem({
         label: 'Down Load File...',
@@ -139,6 +110,7 @@ function getToolsMenu() {
             Ext.create("BACnetDownLoadFile")
         }
     })
+   
     var bacnetConfig = new nw.MenuItem({
         label: 'BACnet Discovery Wizard...',
         click: function () {
@@ -174,21 +146,47 @@ function getToolsMenu() {
     })
 }
 
-var menu = new nw.Menu({
-    type: 'menubar'
-});
-menu.append(getFileMenu());
-menu.append(getMainMenu());
-menu.append(getToolsMenu());
-nw.Window.get().menu = menu;
-
-// Create a submenu as the 2nd level menu
+exports.getFileMenu = getFileMenu;
+exports.getMainMenu = getMainMenu;
+exports.getToolsMenu = getToolsMenu;
 
 
-// // Create and append the 1st level menu to the menubar
-// menu.append(new nw.MenuItem({
-//     label: 'Menu',
-//     //submenu: submenu
-// }));
 
+// var menu = new nw.Menu({
+//     type: 'menubar'
+// });
+// menu.append(getFileMenu());
+// menu.append(getMainMenu());
+// menu.append(getToolsMenu());
+// nw.Window.get().menu = menu;
 
+function getMainMenu() {
+    var localhref = location.href;
+    var indexMenu = new nw.MenuItem({
+        label: 'Home',
+        click: function () {
+            location.href = localhref
+        }
+    })
+    var programMenu = new nw.MenuItem({
+        label: 'program',
+        click: function () {
+            openIframeSrc("http://127.0.0.1/program")
+        }
+    })
+    var graphMenu = new nw.MenuItem({
+        label: 'Graph',
+        click: function () {
+            openIframeSrc("http://127.0.0.1/graph")
+        }
+    })
+
+    var tools = new nw.Menu();
+    tools.append(indexMenu);
+    tools.append(programMenu);
+    tools.append(graphMenu);
+    return new nw.MenuItem({
+        label: 'Menu',
+        submenu: tools
+    })
+}

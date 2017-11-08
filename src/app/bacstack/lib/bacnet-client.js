@@ -66,15 +66,15 @@ module.exports = function (options) {
   };
 
   var invokeCallback = function (id, err, result) {
-    console.log("invokeCallback", id, err, result)
-    console.log("invokeStore", invokeStore)
+    //console.log("invokeCallback", id, err, result)
+    //console.log("invokeStore", invokeStore)
     var callback = invokeStore[id];
     if (callback) return callback(err, result);
     debug('InvokeId ', id, ' not found -> drop package');
   };
 
   var addCallback = function (id, callback) {
-    console.log("addCallback", id, callback)
+    //console.log("addCallback", id, callback)
 
     var timeout = setTimeout(function () {
       delete invokeStore[id];
@@ -653,7 +653,7 @@ module.exports = function (options) {
     var invokeId = getInvokeId();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE | baEnum.BacnetNpduControls.EXPECTING_REPLY, address);
     baAdpu.encodeConfirmedServiceRequest(buffer,
-      baEnum.BacnetPduTypes.PDU_TYPE_CONFIRMED_SERVICE_REQUEST | ((count < fileBuffer.length) ? 0 : baEnum.BacnetPduTypes.MORE_FOLLOWS),
+      baEnum.BacnetPduTypes.PDU_TYPE_CONFIRMED_SERVICE_REQUEST | ((fileBuffer.length!=450) ? 0 : baEnum.BacnetPduTypes.MORE_FOLLOWS),
       baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_ATOMIC_WRITE_FILE,
       maxSegments,
       baEnum.BacnetMaxAdpu.MAX_APDU1476,

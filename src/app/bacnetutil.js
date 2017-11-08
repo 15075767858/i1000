@@ -2,11 +2,156 @@ var bacnet = require('./bacstack/index');
 var bacnetenum = require('./bacstack/index').enum;
 var benum = require('./bacstack/lib/bacnet-enum');
 var xmlbuilder = require("xmlbuilder");
+var xml2js = require("xml2js");
 var bacnetdevice = require("./bacnet-device")
 var dateFormat = require('dateformat');
 var fs = require('fs-extra')
+var crc = require("./crc");
+var path = require("path");
+// checkUploadFile(1, "C:\\Users\\Administrator\\Desktop\\程序文件\\1001", '1063', function () {
+//     console.log(arguments)
+// })
 
-exports.bacnetdevice=bacnetdevice;
+// var device = { "npdu": { "len": 10, "funct": 40, "destination": { "type": 0, "net": 65535 }, "source": { "type": 0, "net": 1100, "adr": [63] }, "hopCount": 255, "networkMsgType": 0, "vendorId": 0 }, "address": "192.168.253.253", "deviceId": 1063, "maxApdu": 480, "segmentation": 0, "vendorId": 913, "net": 1100, "adr": 63, "id": "extModel63-1", "show": "Instance:1063 NET:1100 MAC:63" }
+// writeFile(device, 2, true, "C:\\Users\\Administrator\\Desktop\\程序文件\\1033.xml",
+//     function () {
+//         console.log(arguments)
+//     }
+// )
+
+function writeFile(device, instance, isCrc, filePath, callback) {
+    var client = new bacnet({
+        adpuTimeout: 10000
+    })
+    var address = device.address;
+    if (device.npdu) {
+        if (device.npdu.source) {
+            address = { address: device.address, net: device.npdu.source.net, adr: device.npdu.source.adr };
+        }
+    }
+    callback("start", 0);
+    var fileBuffer = loadFile(filePath, isCrc);
+    callback("load file and writeFile property", 0);
+    writeFilePrperty(client, address, instance, fileBuffer, function (err, result) {
+        callback("write File Property Success", 0)
+        loopWriteFile(client, address, instance, fileBuffer, 0, 450, callback)
+    })
+}
+exports.writeFile = writeFile;
+function loadFile(filePath, isCrc) {
+    var programFile = fs.readFileSync(filePath)
+    if (isCrc) {
+        programFile = crc.BufferCrc16(programFile)
+    }
+    return programFile
+}
+function loopWriteFile(client, address, instance, fileBuffer, position, count, callback) {
+    var uploadBuffer = fileBuffer.slice(position * count, position * count + count);
+    var progress = (position * count) / fileBuffer.length;
+    if (progress >= 1) {
+        callback("writing file ...", progress > 1 ? 1 : progress)
+        client.close()
+    }
+    if (uploadBuffer.length > 0) {
+        console.log(fileBuffer.length, uploadBuffer.length, position, count, position * count, position * count + count, uploadBuffer)
+        client.writeFile(address, { type: 10, instance: instance }, position, uploadBuffer.length, uploadBuffer, function (err, value) {
+            if (err) {
+                loopWriteFile(client, address, instance, fileBuffer, position, count, callback)
+                return
+            } else {
+                position++;
+                loopWriteFile(client, address, instance, fileBuffer, position, count, callback)
+            }
+            console.log(err, value)
+        })
+    }
+}
+function writeFilePrperty(client, address, instance, fileBuffer, callback) {
+    client.writeProperty(address, bacnetenum.BacnetObjectTypes.OBJECT_FILE,
+        instance,//实例号
+        bacnetenum.BacnetPropertyIds.PROP_FILE_SIZE,
+        0,//优先级
+        [{
+            type: 2,
+            value: fileBuffer.length
+        }], function (err, value) {
+            if (err) {
+                writeFilePrperty(client, address, instance, fileBuffer, callback)
+            } else {
+                //console.log(programFile.slice(0, 450).toJSON())
+                callback(err, value)
+            }
+        })
+}
+function checkUploadFile(fileInstance, filePath, deviceId, callback) {
+    if (deviceId) {
+        deviceId = deviceId + ""
+    }
+    switch (fileInstance - 0) {
+        case 1:
+            checkProgramFile(filePath, deviceId, callback);
+            break;
+        case 2:
+            checkConfigFile(filePath, deviceId, callback);
+            break;
+        case 3:
+            checkFirmwareFile(filePath, callback);
+            break;
+        default:
+            return false;
+    }
+}
+
+exports.checkUploadFile = checkUploadFile;
+function checkProgramFile(filePath, deviceId, callback) {
+    xml2js.parseString(fs.readFileSync(filePath), function (err, result) {
+        if (err) {
+            callback(err, false)
+        }
+        try {
+            result.root.plant.every(function (plant) {
+                return plant.master_node.every(function (master_node) {
+                    if (typeof deviceId == "string" & typeof master_node.key != "undefined") {
+                        console.log(deviceId, master_node.key)
+                        if (master_node.key[0].substr(0, 4) !== deviceId) {
+                            callback(new Error("The Selected File Instance is Incorrect! Current Device Instance:" + deviceId), false)
+                            return false;
+                        }
+                        return true;
+                    }
+                    return true;
+                })
+            });
+
+            callback(null, "The Selected File is Corrent! File Path is : <br> " + filePath, result);
+        } catch (err) {
+            callback(new Error("The Selected File is Incorrect! Please Check File!"), false);
+        }
+        //callback(err, result)
+    })
+}
+function checkConfigFile(filePath, deviceId, callback) {
+    xml2js.parseString(fs.readFileSync(filePath), function (err, result) {
+        if (err) {
+            callback(err, false)
+            return
+        }
+        if (path.extname(filePath) != ".xml") {
+            callback(new Error("The Selected File is Incorrect! Please Check File!"));
+            return;
+        }
+        callback(null, "The Selected File is Corrent! File Path is : <br> " + filePath);
+    })
+}
+function checkFirmwareFile(filePath, callback) {
+    if (path.extname(filePath) != ".bin") {
+        callback(new Error("The Selected File is Incorrect! Please Check File!"));
+        return;
+    }
+    callback(null, "The Selected File is Corrent! File Path is : <br> " + filePath);
+}
+
+exports.bacnetdevice = bacnetdevice;
 // getWhoIsData(3000, function (err,data) {
 //     console.log(arguments)
 // })
@@ -114,7 +259,9 @@ function readAllProertys(result) {
 // })
 function readObjectInfoAll(client, address, instance, objectType, callback) {
     if (!client) {
-        client = new bacnet()
+        client = new bacnet({
+            adpuTimeout: 10000
+        })
     }
     readObjectInfo(client, address, instance, objectType, bacnetenum.BacnetPropertyIds.PROP_ALL, function (err, result) {
         if (err) {

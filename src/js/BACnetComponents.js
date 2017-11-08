@@ -649,6 +649,9 @@ Ext.define("BACnetDownLoadFile", {
     viewModel: {
         data: {
             fileInstance: 0,
+            chooseDeivce: false,
+            deviceId: null,
+            fileName: null,
             info: "Before Download File ,Please Ensure Communication Clear,and Don't Make Any Read and Write Operations of Equipment,Avoid Download Failed."
         }
     },
@@ -682,7 +685,9 @@ Ext.define("BACnetDownLoadFile", {
                     },
                     listeners: {
                         change: function (field, newValue) {
-                            var viewModel = field.up("window").viewModel
+                            var win = field.up("window")
+                            var viewModel = win.viewModel
+                            win.down("#chooseFile").setValue("")
                             switch (newValue) {
                                 case "1":
                                     viewModel.set("info", "You have Chosen to Download the Program File. Please Continue to Select the Device You Need to Download! If You do not Need Check File,Select in the Checkbox Below.");
@@ -691,19 +696,21 @@ Ext.define("BACnetDownLoadFile", {
                                 case "3":
                                     viewModel.set("info", "You have Chosen to Upgrade Firmware. Please Continue to Select the Device You Need to Upgrade!");
                             }
-
+                            field.up("window").down("#chooseDevice").setDisabled(false)
                             console.log(arguments)
                         }
                     }
-
                 },
                 {
                     layout: "hbox",
                     margin: "5 0 0 0",
+                    disabled: true,
+                    itemId: "chooseDevice",
                     items: [
                         {
                             xtype: 'checkbox',
-                            fieldLabel: "Choose Devide:",
+                            fieldLabel: "Choose Device:",
+                            bind: "{chooseDeivce}",
                             labelWidth: 151,
                             inputValue: true,
                             uncheckedValue: false,
@@ -733,6 +740,8 @@ Ext.define("BACnetDownLoadFile", {
                             width: 275,
                             valueField: "deviceId",
                             displayField: "show",
+                            itemId: "deviceId",
+                            bind: "{deviceId}",
                             emptyText: "Discovering Bacnet Devices ...",
                             disabled: true,
                             listeners: {
@@ -740,12 +749,13 @@ Ext.define("BACnetDownLoadFile", {
                                     iBACnet.getWhoIsData2(3000, function (err, devices) {
                                         if (!err) {
                                             var store = Ext.create("Ext.data.Store", {
-                                                fields: ["deviceId", "net", "adr", {
-                                                    name: "show",
-                                                    convert: function (val, model) {
-                                                        return "Instance:" + model.data.deviceId + " NET:" + model.data.net + " MAC:" + model.data.adr
-                                                    }
-                                                }],
+                                                fields: ["deviceId",
+                                                    "net", "adr", {
+                                                        name: "show",
+                                                        convert: function (val, model) {
+                                                            return "Instance:" + model.data.deviceId + " NET:" + model.data.net + " MAC:" + model.data.adr
+                                                        }
+                                                    }],
                                                 data: devices
                                             })
                                             field.setEmptyText("Discovery Bacnet Device " + devices.length)
@@ -756,30 +766,36 @@ Ext.define("BACnetDownLoadFile", {
                                 },
                                 change: function (field, newValue, oldValue) {
                                     console.log(arguments)
+                                    var retryCount = 3;
                                     new bacnetutil.bacnetdevice.BACnetDevice(newValue + "", function (err, device) {
                                         if (err) {
-                                            Ext.MessageBox.show({
-                                                title: "Download File",
-                                                msg: 'Can Not Acquired the Selected Device Firmware-Version and Model-Name,Please Check Communication Status,Or shut down other BACnet programs ,and Try Again. ',
-                                                buttons: Ext.MessageBox.OK,
-                                                scope: this,
-                                                fn: function () {
-                                                    field.setValue(false)
-                                                },
-                                                icon: Ext.MessageBox.ERROR,
-                                            });
+                                            if (retryCount-- == 0) {
+                                                Ext.MessageBox.show({
+                                                    title: "Download File",
+                                                    msg: 'Can Not Acquired the Selected Device Firmware-Version and Model-Name,Please Check Communication Status,Or shut down other BACnet programs ,and Try Again. ',
+                                                    buttons: Ext.MessageBox.OK,
+                                                    scope: this,
+                                                    fn: function () {
+                                                        field.setValue(false)
+                                                    },
+                                                    icon: Ext.MessageBox.ERROR,
+                                                });
+                                            }
                                         } else {
+                                            device.closeClient();
                                             Ext.MessageBox.show({
                                                 title: "Download File",
                                                 msg: 'Current Select Model Name:' + device.PROP_MODEL_NAME + ',Firmware Version:' + device.PROP_FIRMWARE_REVISION + 'Please Select a Corresponding ProgramFile to Update!',
                                                 buttons: Ext.MessageBox.OK,
                                                 scope: this,
                                                 fn: function () {
+                                                    var win = field.up("window")
+                                                    win.down("#chooseFile").setValue("")
+                                                    win.down("#chooseFile").setDisabled(false)
                                                 },
                                                 icon: Ext.MessageBox.INFO,
                                             });
                                         }
-
                                     })
                                 }
                             }
@@ -790,10 +806,46 @@ Ext.define("BACnetDownLoadFile", {
                     margin: "5 0 0 0",
                     items: [
                         {
+                            itemId: "chooseFile",
+                            disabled: true,
                             xtype: "filefield",
                             labelWidth: 166,
                             width: "100%",
-                            fieldLabel: "Choose File:"
+                            bind: "{fileName}",
+                            fieldLabel: "Choose File:",
+                            listeners: {
+                                change: function (field, newValue) {
+                                    var win = field.up("window");
+                                    var viewModel = win.viewModel;
+
+                                    
+                                    bacnetutil.checkUploadFile(viewModel.get("fileInstance"), newValue, viewModel.get("chooseDeivce") ? null : viewModel.get("deviceId") + "", function (err, result) {
+                                        if (err) {
+                                            Ext.MessageBox.show({
+                                                title: "Download File",
+                                                msg: err.message,
+                                                buttons: Ext.MessageBox.OK,
+                                                scope: this,
+                                                fn: function () {
+                                                    win.down("#startDownlaod").setDisabled(true)
+                                                },
+                                                icon: Ext.MessageBox.ERROR
+                                            });
+                                        } else {
+                                            Ext.MessageBox.show({
+                                                title: "Download File",
+                                                msg: result,
+                                                buttons: Ext.MessageBox.OK,
+                                                scope: this,
+                                                fn: function () {
+                                                    win.down("#startDownlaod").setDisabled(false)
+                                                },
+                                                icon: Ext.MessageBox.INFO
+                                            });
+                                        }
+                                    })
+                                }
+                            }
                         }
                     ]
                 },
@@ -807,19 +859,38 @@ Ext.define("BACnetDownLoadFile", {
                         {
                             scale: "large",
                             xtype: "button",
+                            disabled: true,
+                            itemId: "startDownlaod",
                             text: "Start Download",
-                            margin: "0 50 0 0"
+                            margin: "0 50 0 0",
+                            handler: function () {
+                                var win = this.up("window");
+                                var viewModel = win.viewModel;
+                                var progress = win.down("#uploadProgress");
+                                console.log(win.down("#deviceId").getSelectedRecord())
+                                console.log(viewModel.get("fileInstance"), viewModel.get("fileName"))
+                                bacnetutil.writeFile(win.down("#deviceId").getSelectedRecord().data, viewModel.get("fileInstance"), true, viewModel.get("fileName"), function (message, v) {
+                                    progress.setValue(v)
+                                    if (v === 1) {
+                                        Ext.Msg.alert("Download File", "File Download Success!!! Please Wait For the Device to Restart! You Could Close Download Window and Clear Device List , Then Waiting Device Online.");
+                                    }
+                                })
+                            }
                         }, {
                             scale: "large",
                             xtype: "button",
                             text: "Exit",
+                            handler: function () {
+                                this.up("window").close()
+                            }
                         }
                     ]
                 }, {
                     border: 1,
                     width: "100%",
                     maigin: "10 0",
-                    xtype: "progressbar"
+                    xtype: "progressbar",
+                    itemId: "uploadProgress"
                 }, {
                     maigin: "10 0",
                     border: 1,
@@ -833,7 +904,7 @@ Ext.define("BACnetDownLoadFile", {
     }
 })
 Ext.onReady(function () {
-    Ext.create("BACnetDownLoadFile")
+    //Ext.create("BACnetDownLoadFile")
 })
 Ext.define("MainPanel", {
     extend: "Ext.panel.Panel",
@@ -1055,7 +1126,3 @@ Ext.define("PointGrid", {
     ]
 })
 
-Ext.onReady(function () {
-
-
-})
