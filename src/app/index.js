@@ -35,10 +35,10 @@ function openIframeSrc(src) {
     //alert(runApp)
     //runApp = "graph";
     if (runApp == "program") {
-        openIframeSrc("http://127.0.0.1/program");
+        openIframeSrc("http://127.0.0.1/program#nopassword");
         document.title = "program edit";
     } else if (runApp == "graph") {
-        openIframeSrc("http://127.0.0.1/graph");
+        openIframeSrc("http://127.0.0.1/graph#nopassword");
         document.title = "graph edit";
     } else {
         var menu = new nw.Menu({

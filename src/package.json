@@ -1,5 +1,5 @@
 {
-    "name": "i1000 Quick builder",
+    "name": "i1000",
     "main": "views/index.html",
     "version": "1.0.0",
     "window": {
