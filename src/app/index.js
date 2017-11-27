@@ -5,8 +5,13 @@ var iBACnet = require("../app/bacnet");
 var bacnetutil = require("../app/bacnetutil");
 var iFile = require("../app/file");
 var gui = require("nw.gui");
+gui.App.clearCache()
 var config;
-
+const bacnetInterface = {
+    iBACnet:iBACnet,
+    bacnetutil:bacnetutil,
+    iFile:iFile,
+}
 // var menu = new nw.Menu({
 //     type: 'menubar'
 // });
@@ -14,9 +19,10 @@ var config;
 // menu.append(menu.getMainMenu());
 // menu.append(menu.getToolsMenu());
 // nw.Window.get().menu = menu;
-function openIframeSrc(src) {
+function openIframeSrc(src,callback) {
+    var f;
     Ext.onReady(function () {
-        var f = document.getElementById("iframe")
+         f = document.getElementById("iframe")
         if (f) {
             f.src = src;
         } else {
@@ -26,16 +32,25 @@ function openIframeSrc(src) {
             f.style.height = document.body.height;
             document.body.appendChild(f)
         }
-        if (Ext.getCmp("mainPanel"))
+        if (Ext.getCmp("mainPanel")){
             Ext.getCmp("mainPanel").hide()
+        }
+        callback(f)
     })
 }
 (function () {
     var runApp = gui.App.argv[0];
     //alert(runApp)
-    //runApp = "graph";
+    //runApp = "program";
     if (runApp == "program") {
-        openIframeSrc("http://127.0.0.1/program#nopassword");
+        var f = openIframeSrc("http://127.0.0.1/program#nopassword",function(){
+            console.log(frames[0]);
+            frames[0].parentWindow=window;
+            frames[0].bacnetInterface=bacnetInterface;
+            frames[0].deviceOnlinTreePanelReady=function(panel){
+                alert("deviceOnlinTreePanelReady")
+            }
+        });
         document.title = "program edit";
     } else if (runApp == "graph") {
         openIframeSrc("http://127.0.0.1/graph#nopassword");

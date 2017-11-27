@@ -18,7 +18,212 @@ var path = require("path");
 //         console.log(arguments)
 //     }
 // )
+//getDevicesToTreeData()
+//获得 treepanel 的设备
+function getDevicesToTreeData(callback) {
+    getWhoIsData2(3000, function (err, devices, client) {
+        if (devices) {
+            devices.map(function (device) {
+                device.id = device.deviceId;
+                device.qtip = device.address + ":47808  Device Instance:" + device.deviceId + " Net:" + device.net + ", AddrLen:" + device.adrLen + ", MAC:" + device.adr;
+                device.text = "Instance:" + device.deviceId + " Net:" + device.net + ",MAC:" + device.adr;
+                device.leaf = false;
+            })
+        }
+        callback(err, devices);
+    })
+}
+//getObjectsToTreeData("1063")
+function getObjectsToTreeData(device, propertyIdentifier, callback) {
+    readPropertyMultiple(null, device, 8, device.deviceId, propertyIdentifier, null, function (err, result) {
+        if (!err) {
+            var resObj = [];
+            for (var property in bacnetenum.BacnetPropertyIds) {
+                var id = bacnetenum.BacnetPropertyIds[property];
+                var res = searchProperty(result, id);
+                if (!(res === undefined || res === null)) {
+                    if (id == 76) {
+                        res.forEach(function (item) {
+                            console.log(item)
+                            var objName = BacnetObjectTypeName(item.value.type);
+                            var textInstance = ("00" + item.value.instance)
+                            textInstance = "[" + textInstance.substr(textInstance.length - 3, textInstance.length) + "]"
+                            if (item.value.type != 8) {
+                                var text = objName.substr(7, property.length).toLowerCase() + "[" + id + "]" + ":" + textInstance;
+                                resObj.push({
+                                    objType: item.value.type,
+                                    objValue: item.value.instance,
+                                    text: text,
+                                    sourcetext: text,
+                                    id: objName + "_" + item.value.instance,
+                                    isObject: true,
+                                    leaf: false
+                                })
+                            }
+                        })
+                    } else {
+                        resObj.push({
+                            objType: property,
+                            objValue: res,
+                            text: property.substr(5, property.length).toLowerCase() + "[" + id + "]" + ":" + res,
+                            id: id,
+                            leaf: true
+                        })
+                    }
 
+                }
+            }
+            callback(null, resObj);
+        }
+    })
+}
+exports.getObjectsToTreeData = getObjectsToTreeData;
+
+// var device = { "npdu": { "len": 10, "funct": 40, "destination": { "type": 0, "net": 65535 }, "source": { "type": 0, "net": 1100, "adr": [63] }, "hopCount": 255, "networkMsgType": 0, "vendorId": 0 }, "address": "192.168.253.253", "deviceId": 1063, "maxApdu": 480, "segmentation": 0, "vendorId": 913, "net": 1100, "adr": 63, "id": "extModel63-1", "show": "Instance:1063 NET:1100 MAC:63" }
+// getObjectsListToTreeData(device,function(){
+//     console.log(arguments)
+// })
+function getObjectsListToTreeData(device, callback) {
+    readPropertyMultiple(null, device, 8, device.deviceId, 76, null, function (err, result) {
+        var resObj = [];
+        for (var property in bacnetenum.BacnetPropertyIds) {
+            var id = bacnetenum.BacnetPropertyIds[property];
+            var res = searchProperty(result, id);
+            if (!(res === undefined || res === null)) {
+                if (id == 76) {
+                    res.forEach(function (item) {
+                        console.log(item)
+                        var objName = BacnetObjectTypeName(item.value.type);
+                        var textInstance = ("00" + item.value.instance)
+                        textInstance = "[" + textInstance.substr(textInstance.length - 3, textInstance.length) + "]"
+                        if (item.value.type != 8) {
+                            var text = objName.substr(7, property.length).toLowerCase() + "[" + id + "]" + ":" + textInstance;
+                            resObj.push({
+                                objType: item.value.type,
+                                objValue: item.value.instance,
+                                text: text,
+                                sourcetext: text,
+                                id: objName + "_" + item.value.instance,
+                                isObject: true,
+                                leaf: false
+                            })
+                        }
+                    })
+                } else {
+                    resObj.push({
+                        objType: property,
+                        objValue: res,
+                        text: property.substr(5, property.length).toLowerCase() + "[" + id + "]" + ":" + res,
+                        id: id,
+                        leaf: true
+                    })
+                }
+
+            }
+        }
+        callback(null, resObj);
+    })
+}
+exports.getObjectsListToTreeData = getObjectsListToTreeData;
+//var address = { address: '192.168.253.253', net: 1100, adr: [63] }
+function readPropertyMultiple(client, address, objectType, instance, propertyIdentifier, propertyArrayIndex, callback) {
+    var isHaveClient = true;
+    if (!client) {
+        isHaveClient = false;
+        client = new bacnet({
+            adpuTimeout: 10000
+        })
+    }
+    var requestArray = [{
+        objectIdentifier: {
+            type: objectType, //AI AO AV BI BO BV 
+            instance: instance //实例号
+        },
+        propertyReferences: [{
+            propertyIdentifier: propertyIdentifier
+        }]
+    }];
+    if (propertyArrayIndex != null & propertyArrayIndex != undefined) {
+        requestArray[0].propertyReferences.propertyArrayIndex = propertyArrayIndex;
+    }
+    client.readPropertyMultiple(address, requestArray, function (err, result) {
+        if (err) {
+            readPropertyMultiple(client, address, objectType, instance, propertyIdentifier, callback)
+        } else {
+            callback(err, result)
+            if (!isHaveClient) {
+                client.close();
+            }
+        }
+    });
+}
+
+//var address = { address: '192.168.253.253', net: 1100, adr: [63] }
+//getObjectParsentValue(null, address, 0, 1, function () {  console.log(arguments)})
+//获取ParsentValue
+function getObjectParsentValue(client, address, objectType, instance, callback) {
+    var isHaveClient = true;
+    if (!client) {
+        isHaveClient = false;
+        client = new bacnet({
+            adpuTimeout: 10000
+        })
+    }
+    readObjectInfo(client, address, instance, objectType, bacnetenum.BacnetPropertyIds.PROP_PRESENT_VALUE, function (err, result) {
+        if (err) {
+            callback(err, null);
+            return;
+        }
+        var resObj = decodeBacnetObjectInfo(result)
+        callback(null, resObj['PROP_PRESENT_VALUE'], result);
+        if (!isHaveClient) {
+            client.close();
+        }
+    })
+}
+exports.getObjectParsentValue = getObjectParsentValue;
+var address = { address: '192.168.253.253', net: 1100, adr: [63] }
+//105 80
+// getObjListToTreeData(address, 1, 1, 105, function () {
+//     console.log(arguments)
+// })
+//获取设备 AIAOBIBO..的所有属性
+function getObjListToTreeData(device, objectType, instance, propertyIdentifier, callback) {
+    readPropertyMultiple(null, device, objectType, instance, propertyIdentifier, null, function (err, result) {
+        //readObjectInfoAll(null, address, instance, objectType, function (err, resData, result) {
+        console.log(result)
+        var resObj = [];
+        for (var property in bacnetenum.BacnetPropertyIds) {
+            var id = bacnetenum.BacnetPropertyIds[property];
+            var res = searchProperty(result, id);
+            if (!(res === undefined || res === null)) {
+                resObj.push({
+                    objType: property,
+                    objValue: res,
+                    text: property.substr(5, property.length).toLowerCase() + "[" + id + "]" + ":" + res,
+                    id: id,
+                    leaf: true
+                })
+            }
+        }
+        console.log(resObj)
+        callback(null, resObj)
+    })
+}
+exports.getObjListToTreeData = getObjListToTreeData;
+
+//根据id获取 bacnet object type 的名称
+function BacnetObjectTypeName(id) {
+    for (var type in bacnetenum.BacnetObjectTypes) {
+        if (bacnetenum.BacnetObjectTypes[type] == id) {
+            return type
+        }
+    }
+    return null;
+}
+exports.getDevicesToTreeData = getDevicesToTreeData;
+
+//写入文件 功能入口 
 function writeFile(device, instance, isCrc, filePath, callback) {
     var client = new bacnet({
         adpuTimeout: 10000
@@ -26,7 +231,11 @@ function writeFile(device, instance, isCrc, filePath, callback) {
     var address = device.address;
     if (device.npdu) {
         if (device.npdu.source) {
-            address = { address: device.address, net: device.npdu.source.net, adr: device.npdu.source.adr };
+            address = {
+                address: device.address,
+                net: device.npdu.source.net,
+                adr: device.npdu.source.adr
+            };
         }
     }
     callback("start", 0);
@@ -38,6 +247,7 @@ function writeFile(device, instance, isCrc, filePath, callback) {
     })
 }
 exports.writeFile = writeFile;
+
 function loadFile(filePath, isCrc) {
     var programFile = fs.readFileSync(filePath)
     if (isCrc) {
@@ -45,6 +255,7 @@ function loadFile(filePath, isCrc) {
     }
     return programFile
 }
+
 function loopWriteFile(client, address, instance, fileBuffer, position, count, callback) {
     var uploadBuffer = fileBuffer.slice(position * count, position * count + count);
     var progress = (position * count) / fileBuffer.length;
@@ -54,7 +265,10 @@ function loopWriteFile(client, address, instance, fileBuffer, position, count, c
     }
     if (uploadBuffer.length > 0) {
         console.log(fileBuffer.length, uploadBuffer.length, position, count, position * count, position * count + count, uploadBuffer)
-        client.writeFile(address, { type: 10, instance: instance }, position, uploadBuffer.length, uploadBuffer, function (err, value) {
+        client.writeFile(address, {
+            type: 10,
+            instance: instance
+        }, position, uploadBuffer.length, uploadBuffer, function (err, value) {
             if (err) {
                 loopWriteFile(client, address, instance, fileBuffer, position, count, callback)
                 return
@@ -66,15 +280,17 @@ function loopWriteFile(client, address, instance, fileBuffer, position, count, c
         })
     }
 }
+
 function writeFilePrperty(client, address, instance, fileBuffer, callback) {
     client.writeProperty(address, bacnetenum.BacnetObjectTypes.OBJECT_FILE,
-        instance,//实例号
+        instance, //实例号
         bacnetenum.BacnetPropertyIds.PROP_FILE_SIZE,
-        0,//优先级
+        0, //优先级
         [{
             type: 2,
             value: fileBuffer.length
-        }], function (err, value) {
+        }],
+        function (err, value) {
             if (err) {
                 writeFilePrperty(client, address, instance, fileBuffer, callback)
             } else {
@@ -83,6 +299,7 @@ function writeFilePrperty(client, address, instance, fileBuffer, callback) {
             }
         })
 }
+
 function checkUploadFile(fileInstance, filePath, deviceId, callback) {
     if (deviceId) {
         deviceId = deviceId + ""
@@ -103,6 +320,7 @@ function checkUploadFile(fileInstance, filePath, deviceId, callback) {
 }
 
 exports.checkUploadFile = checkUploadFile;
+
 function checkProgramFile(filePath, deviceId, callback) {
     xml2js.parseString(fs.readFileSync(filePath), function (err, result) {
         if (err) {
@@ -130,6 +348,7 @@ function checkProgramFile(filePath, deviceId, callback) {
         //callback(err, result)
     })
 }
+
 function checkConfigFile(filePath, deviceId, callback) {
     xml2js.parseString(fs.readFileSync(filePath), function (err, result) {
         if (err) {
@@ -143,6 +362,7 @@ function checkConfigFile(filePath, deviceId, callback) {
         callback(null, "The Selected File is Corrent! File Path is : <br> " + filePath);
     })
 }
+
 function checkFirmwareFile(filePath, callback) {
     if (path.extname(filePath) != ".bin") {
         callback(new Error("The Selected File is Incorrect! Please Check File!"));
@@ -183,7 +403,40 @@ function getWhoIsData(adpuTimeout, callback) {
         })
     })
 }
+
+function getWhoIsData2(adpuTimeout, callback) {
+    var resData = [];
+    var whoIsCount = 2;
+    var client = new bacnet({
+        adpuTimeout: adpuTimeout
+    });
+    var intval = setInterval(function () {
+        client.whoIs()
+    }, adpuTimeout)
+    setTimeout(function () {
+        clearInterval(intval)
+        client.close()
+        callback(null, resData, client);
+    }, adpuTimeout * (whoIsCount + 1))
+    BACnetIAm(client, null, function (device) {
+        if (device.npdu) {
+            if (device.npdu.source) {
+                if (device.npdu.source.net !== undefined) {
+                    device.net = device.npdu.source.net;
+                }
+                if (device.npdu.source.adr !== undefined) {
+                    device.adr = device.npdu.source.adr[0];
+                    device.adrLen = device.npdu.source.adr.length;
+                }
+            }
+        }
+        client.timeSync(device.address, new Date(), true);
+        resData.push(device)
+    })
+}
 exports.getWhoIsData = getWhoIsData;
+exports.getWhoIsData2 = getWhoIsData2;
+
 // var propertys = ['OBJECT_ACCUMULATOR', 'OBJECT_ANALOG_INPUT', 'OBJECT_ANALOG_OUTPUT', 'OBJECT_ANALOG_VALUE', 'OBJECT_AVERAGING', 'OBJECT_BINARY_INPUT', 'OBJECT_BINARY_OUTPUT', 'OBJECT_BINARY_VALUE', 'OBJECT_CALENDAR', 'OBJECT_COMMAND', 'OBJECT_EVENT_ENROLLMENT', 'OBJECT_FILE', 'OBJECT_GROUP', 'OBJECT_LOOP', 'OBJECT_LIFE_SAFETY_POINT', 'OBJECT_LIFE_SAFETY_ZONE', 'OBJECT_MULTI_STATE_INPUT', 'OBJECT_MULTI_STATE_OUTPUT', 'OBJECT_MULTI_STATE_VALUE', 'OBJECT_NOTIFICATION_CLASS', 'OBJECT_PROGRAM', 'OBJECT_PULSE_CONVERTER', 'OBJECT_SCHEDULE', 'OBJECT_TRENDLOG'];
 // var devices = ["1031"];
 // generateBACnetXml(null, devices, propertys, function (err, id, message, status) {
@@ -217,12 +470,15 @@ function generateBACnetXml(root, devices, propertys, callback) {
             })
         })
     } else {
-        var xml = root.end({ pretty: true }).toString()
+        var xml = root.end({
+            pretty: true
+        }).toString()
         fs.writeFileSync(xmlFile + "BACnetConfig.xml", xml)
     }
 }
 
 exports.generateBACnetXml = generateBACnetXml;
+
 function readAllProertys(result) {
 
     var propertys = ['OBJECT_ACCUMULATOR',
@@ -248,17 +504,20 @@ function readAllProertys(result) {
         'OBJECT_PROGRAM',
         'OBJECT_PULSE_CONVERTER',
         'OBJECT_SCHEDULE',
-        'OBJECT_TRENDLOG']
+        'OBJECT_TRENDLOG'
+    ]
 
 
     console.log(Object_List)
     //bacnetenum.BacnetPropertyIds
 }
-// bacnetutil.readObjectInfoAll(new bacnet(), { address: "192.168.253.253", net: "1100", adr: [63] }, "1063", 8, function () {
+// readObjectInfoAll(new bacnet(), { address: "192.168.253.253", net: "1100", adr: [63] }, "1063", 8, function () {
 //     console.log(arguments)
 // })
 function readObjectInfoAll(client, address, instance, objectType, callback) {
+    var isHaveClient = true;
     if (!client) {
+        isHaveClient = false;
         client = new bacnet({
             adpuTimeout: 10000
         })
@@ -269,25 +528,38 @@ function readObjectInfoAll(client, address, instance, objectType, callback) {
             return;
         }
         console.log(result)
-        var resObj = {}
-        for (var property in bacnetenum.BacnetPropertyIds) {
-            var id = bacnetenum.BacnetPropertyIds[property];
-            var res = searchProperty(result, id)
-            //console.log(id, property, res)
-            if (!(res === undefined || res === null)) {
-                resObj[property] = res
-            }
+
+        var resObj = decodeBacnetObjectInfo(result)
+
+        callback(null, resObj, result);
+        if (!isHaveClient) {
+            client.close();
         }
-        //console.log(resObj)
-        callback(null, resObj);
     })
 }
+function decodeBacnetObjectInfo(result) {
+    var resObj = {}
+    for (var property in bacnetenum.BacnetPropertyIds) {
+        var id = bacnetenum.BacnetPropertyIds[property];
+        var res = searchProperty(result, id)
+        if (!(res === undefined || res === null)) {
+            resObj[property] = res
+        }
+    }
+    return resObj;
+}
+
 exports.readObjectInfoAll = readObjectInfoAll;
+
 function readObjectInfo(client, device, instance, objectType, propertyIdentifier, callback) {
     var address = device.address;
     if (device.npdu) {
         if (device.npdu.source) {
-            address = { address: device.address, net: device.npdu.source.net, adr: device.npdu.source.adr };
+            address = {
+                address: device.address,
+                net: device.npdu.source.net,
+                adr: device.npdu.source.adr
+            };
         }
     }
     var requestArray = [{
@@ -302,6 +574,7 @@ function readObjectInfo(client, device, instance, objectType, propertyIdentifier
     client.readPropertyMultiple(address, requestArray, callback);
 }
 exports.readObjectInfo = readObjectInfo;
+
 function BACnetIAm(client, deviceIds, callback) {
     var devices = [];
     client.whoIs()
@@ -441,6 +714,7 @@ function PROP_OBJECT_IDENTIFIER(obj) {
     }
     return null;
 }
+
 function PROP_EVENT_ENABLE(obj) {
     var res = PROP_OBJECT_TYPE(obj)
     if (res) {
@@ -452,12 +726,15 @@ function PROP_EVENT_ENABLE(obj) {
     }
     return null
 }
+
 function PROP_LIMIT_ENABLE(obj) {
     return PROP_EVENT_ENABLE(obj)
 }
+
 function PROP_STATUS_FLAGS(obj) {
     return PROP_EVENT_ENABLE(obj)
 }
+
 function PROP_OBJECT_TYPE(obj) {
     if (obj) {
         if (obj.value) {
@@ -470,6 +747,7 @@ function PROP_OBJECT_TYPE(obj) {
     }
     return null;
 }
+
 function PROP_OBJECT_NAME(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
@@ -495,61 +773,80 @@ function PROP_OBJECT_LIST(obj) {
 function PROP_SYSTEM_STATUS(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_VENDOR_IDENTIFIER(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_FIRMWARE_REVISION(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_APPLICATION_SOFTWARE_VERSION(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_PROTOCOL_VERSION(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_PROTOCOL_REVISION(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
-function PROP_PROTOCOL_SERVICES_SUPPORTED(obj) {//待修改
+
+function PROP_PROTOCOL_SERVICES_SUPPORTED(obj) { //待修改
     var res = PROP_OBJECT_TYPE(obj);
     return "BitString:" + Bytes2Str(res.value)
 }
-function PROP_PROTOCOL_OBJECT_TYPES_SUPPORTED(obj) {//待修改
+
+function PROP_PROTOCOL_OBJECT_TYPES_SUPPORTED(obj) { //待修改
     return PROP_PROTOCOL_SERVICES_SUPPORTED(obj)
 }
+
 function PROP_MAX_APDU_LENGTH_ACCEPTED(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_SEGMENTATION_SUPPORTED(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_APDU_TIMEOUT(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_NUMBER_OF_APDU_RETRIES(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_DEVICE_ADDRESS_BINDING(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_DATABASE_REVISION(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_MAX_MASTER(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_MAX_INFO_FRAMES(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_DESCRIPTION(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_LOCAL_TIME(obj) {
     return dateFormat(PROP_OBJECT_TYPE(obj), "yyyy-mm-dd HH:MM:ss l")
 }
+
 function PROP_LOCAL_DATE(obj) {
     return dateFormat(PROP_OBJECT_TYPE(obj), "yyyy-mm-dd HH:MM:ss l")
 }
+
 function PROP_UTC_OFFSET(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
@@ -557,9 +854,11 @@ function PROP_UTC_OFFSET(obj) {
 function PROP_DAYLIGHT_SAVINGS_STATUS(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_LOCATION(obj) {
     return PROP_OBJECT_TYPE(obj);
 }
+
 function PROP_ACTIVE_COV_SUBSCRIPTIONS(obj) {
     return PROP_OBJECT_TYPE(obj);
 }

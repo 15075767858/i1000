@@ -142,7 +142,7 @@ class BACnetDevice {
         var client = self.getClient(), root = self.getRoot(), device = self.device;
         bacnetutil.readObjectInfo(client, device, device.deviceId, bacnetenum.BacnetObjectTypes.OBJECT_DEVICE, bacnetenum.BacnetPropertyIds.PROP_ALL,
             function (err, result) {
-                if (err) {
+                if (err) {0
                     console.log(err)
                     client.whoIs()
                     self.initResult(callback);
@@ -160,7 +160,6 @@ class BACnetDevice {
     getResult() {
         return this.result;
     }
-
     setResult(result) {
         var self = this;
         self.result = result;

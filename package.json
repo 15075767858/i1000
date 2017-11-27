@@ -6,10 +6,12 @@
   "scripts": {
     "bacnet": "node src/app/bacnet.js",
     "server": "node src/app/server.js",
-    "start": "nw",
+    "startmac": "open ./dist/i1000/osx64/i1000.app/ --args program",
+    "startwin":"'dist/i1000/win32/i1000.exe' program",
+    "prodwin": "nwbuild --platforms win32  --buildDir dist/ src/ && \"dist/i1000/win32/i1000.exe\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nw  src/",
-    "prod": "nwbuild --platforms win32  --buildDir dist/ src/ && \"F:/i1000/dist/i1000/win32/i1000.exe\"",
+    "prod": "nwbuild --platforms win32  --buildDir dist/ src/ &&npm run startwin",
     "debug": "nw --remote-debugging-port=9222"
   },
   "author": "",

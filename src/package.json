@@ -5,7 +5,12 @@
     "window": {
         "min_width": 1024,
         "min_height": 768,
-        "icon": "assets/logo1.png"
+        "icon": "assets/logo1.png",
+        "toolbar": true,
+        "show_in_taskbar":true 
+    },
+    "webkit": {
+        "page-cache": false
     },
     "devDependencies": {
         "dateformat": "^3.0.2",
