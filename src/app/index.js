@@ -96,7 +96,7 @@ function openIframeSrc(src,callback) {
         var about = new nw.MenuItem({
             label: 'About...',
             click: function () {
-                alert("i1000 Quick builder 1.0.0")
+                alert("i1000 Quick builder 1.0.1")
             }
         })
         var tools = new nw.Menu();
