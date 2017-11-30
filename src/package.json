@@ -1,7 +1,7 @@
 {
     "name": "i1000",
     "main": "views/index.html",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "window": {
         "min_width": 1024,
         "min_height": 768,
