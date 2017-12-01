@@ -323,10 +323,120 @@ app.get('/program/resources/test1.php', function (req, res) {
                 }
             }
 
+
+        })
+
+    }
+    if (par == "getnullschedule") {
+        var nodeName = req.param("nodename");
+        console.log(nodeName)
+
+        var count = ["601", "602", "603", "604", "605", "606", "607", "608", "609", "610"];
+        var redisDevice = new RedisDevice;
+        redisDevice.getAllKeysJson(function (err, obj) {
+            for (var i = 601; i <= 699; i++) {
+                if (obj[nodeName + i] === undefined) {
+                    res.send(nodeName + i + "");
+                    redisDevice.quit()
+                    return;
+                }
+            }
+            redisDevice.quit()
+            res.send("null");
         })
     }
-
+    if (par == "changevaluenopublish") {
+        var nodeName = req.param("nodename");
+        var type = req.param("type");
+        var value = req.param("value")
+        setRedisUpdateTime(nodeName);
+        var client = redis.createClient();
+        client.hset(nodeName, type, value, function (err, reply) {
+            res.send(reply + "");
+            client.quit();
+        });
+    }
+    if (par == "changevalue") {
+        var nodeName = req.param("nodename");
+        var type = req.param("type");
+        var value = req.param("value")
+        changeValue(nodeName, type, value, function (err, reply) {
+            res.send(reply + "");
+        })
+    }
+    if (par == "schedule") {
+        var devName = req.param("nodename");
+        var redisDevice = new RedisDevice;
+        redisDevice.getAllKeysJson(function (err, obj) {
+            redisDevice.keys(devName + "6??", function (err, keys) {
+                var arr = [];
+                keys.forEach(key => {
+                    arr.push({
+                        allowDrop: false,
+                        allowDrag: false,
+                        leaf: true,
+                        text: obj[key]["Object_Name"],
+                        value: key
+                    })
+                })
+                res.send(arr);
+                redisDevice.quit();
+            })
+        })
+    }
+    if (par == "getDevxmls") {
+        var dir = "devxml";
+        dir = filePathTransform(dir);
+        var files = fs.readdirSync(dir);
+        res.send(files);
+    }
+    if (par == "getbackupfiles") {
+        var folder = req.param("folder");
+        var dir = filePathTransform(folder);
+        var files = fs.readdirSync(dir);
+        var arr = [];
+        files.forEach(file => {
+            var fInfo = fs.statSync(filePathTransform(path.join(folder, file)))
+            arr.push({
+                name: file,
+                lasttime: fInfo.ctime,
+                size: fInfo.size,
+                filetype: "file",
+                src: path.join("resources", folder, file)
+            })
+        })
+        res.send(arr);
+    }
+    if (par == "nodes") {
+        var redisDevice = new RedisDevice;
+        redisDevice.getAllKeysJson(function (err, obj) {
+            redisDevice.keysAll(function(err,keys){
+                keys.sort();                
+                var arr=[];
+                keys.forEach(function(key){
+                    arr.push({
+                        leaf:true,
+                        text:obj[key]["Object_Name"],
+                        value:key
+                    })
+                })
+                res.send(arr);
+            })
+        })
+    }
+    
 })
+function changeValue(nodeName, type, value, callback) {
+    setRedisUpdateTime(nodeName);
+    var client = redis.createClient();
+    client.hset(nodeName, type, value, function (err, reply) {
+        client.publish(nodeName.substr(0, 4) + ".8.*", nodeName + "\r\n" + type + "\r\n" + value + "", function (err, reply) {
+            console.log(arguments)
+            client.quit();
+            callback(err, reply + "")
+        })
+    });
+}
 function trimall(str) {
 
     var qian = [" ", "　", "\t", "\n", "\r"];

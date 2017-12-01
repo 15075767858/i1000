@@ -30,6 +30,11 @@ class RedisDevice {
             callback(err, replies);
         })
     }
+    keys(pattern, callback) {
+        this.client.keys(pattern || "[0-9][0-9][0-9][0-9][0-9][0-9][0-9]", function (err, replies) {
+            callback(err, replies);
+        })
+    }
     hgetall(key, callback) {
         this.client.hgetall(key, function (err, result) {
             callback(err, result)
