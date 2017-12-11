@@ -13,6 +13,9 @@ class RedisDevice {
         var obj = {};
         __this.keysAll(function (err, keys) {
             var count = 0;
+            if(keys.length==0){
+                callback(err,obj);
+            }
             keys.forEach(key => {
                 __this.hgetall(key, function (err, result) {
                     obj[key] = result;
@@ -44,6 +47,9 @@ class RedisDevice {
         this.client.hget(key, property, function (err, replies) {
             callback(err, replies)
         })
+    }
+    hkeys(key, callback) {
+        this.client.hkeys(key,callback)
     }
     publish(channel, value, callback) {
         this.client.publish(channel, value, callback)
@@ -99,6 +105,8 @@ class RedisDevice {
         //redis = this.client;
         var ip = this.ip;
         var root = {
+            allowDrop: false,
+            allowDrag: false,
             'checked': true,
             'qtip': "On Line",
             'text': ip,
@@ -110,6 +118,8 @@ class RedisDevice {
             root['children'].push({
                 leaf: false,
                 text: device,
+                allowDrop: false,
+                allowDrag: false,
                 children: __this.getDevChildren(arList, device)
             })
         })
@@ -130,7 +140,9 @@ class RedisDevice {
                 arr.push({
                     text: types[i],
                     leaf: false,
-                    children: children
+                    children: children,
+                    allowDrop: false,
+                    allowDrag: false
                 })
             }
         }

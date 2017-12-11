@@ -4,52 +4,65 @@ var iBACnet = require("../app/bacnet");
 //var imenu = require("../app/menu");
 var bacnetutil = require("../app/bacnetutil");
 var iFile = require("../app/file");
+//var iServer = require("../app/server");
+var child_process = require("child_process");
 var gui = require("nw.gui");
-gui.App.clearCache()
+
+runRedis()
+runServer()
+
+function runRedis() {
+    var execpath = process.argv[0];
+    var redisPath = path.join(execpath, "../../redis-server.exe");
+    child_process.exec(redisPath);
+}
+function runServer() {
+    gui.App.clearCache()
+    var execpath = process.argv[0];
+    var nodePath = path.join(execpath, "../../n.exe");
+    var node = child_process.spawn(nodePath, ['app/server.js'])
+    node.stdout.on('data', (data) => {
+        var arr = data.toString().split(" ");;
+        if (arr[0] == "serverport") {
+            runAppStart(arr[1]);
+            fs.writeFileSync(path.join(__dirname, path.join(execpath, "../../log.text")));
+        } else {
+            fs.appendFileSync(path.join(__dirname, path.join(execpath, "../../log.text")));
+        }
+    });
+}
+
+
+// child_process.exec("node app/server.js", function (err, stdout, stderr) {
+//     console.log(arguments)
+// })
+//runApp()
 var config;
 const bacnetInterface = {
-    iBACnet:iBACnet,
-    bacnetutil:bacnetutil,
-    iFile:iFile,
+    iBACnet: iBACnet,
+    bacnetutil: bacnetutil,
+    iFile: iFile,
+    //iServer: iServer
 }
-// var menu = new nw.Menu({
-//     type: 'menubar'
-// });
-// menu.append(menu.getFileMenu());
-// menu.append(menu.getMainMenu());
-// menu.append(menu.getToolsMenu());
-// nw.Window.get().menu = menu;
-function openIframeSrc(src,callback) {
-    var f;
-    Ext.onReady(function () {
-         f = document.getElementById("iframe")
-        if (f) {
-            f.src = src;
-        } else {
-            f = document.createElement("iframe");
-            f.id = 'bodyframe'
-            f.src = src;
-            f.style.height = document.body.height;
-            document.body.appendChild(f)
-        }
-        if (Ext.getCmp("mainPanel")){
-            Ext.getCmp("mainPanel").hide()
-        }
-        callback(f)
-    })
-}
-(function () {
+
+
+function runAppStart(port) {
     var runApp = gui.App.argv[0];
     //alert(runApp)
-    //runApp = "program";
+    runApp = "program";
     if (runApp == "program") {
-        var f = openIframeSrc("http://127.0.0.1/program#nopassword",function(){
+        //"http://127.0.0.1/program#nopassword"
+        var f = openIframeSrc("http://127.0.0.1:" + port + "/program#nopassword", function () {
             console.log(frames[0]);
-            frames[0].parentWindow=window;
-            frames[0].bacnetInterface=bacnetInterface;
-            frames[0].deviceOnlinTreePanelReady=function(panel){
-                alert("deviceOnlinTreePanelReady")
-            }
+            frames[0].parentWindow = window;
+            frames[0].bacnetInterface = bacnetInterface;
+            // frames[0].MyConfig = {
+            //     apiUrl: "http://" + "127.0.0.1" + ":" + port + "/program/resources/api.php",
+            //     mainUrl: "http://" + "127.0.0.1" + ":" + port + "/program/resources/main.php"
+            // }
+            //frames[0].deviceOnlinTreePanelReady = function (panel) {
+            //  alert("deviceOnlinTreePanelReady")
+            //}
         });
         document.title = "program edit";
     } else if (runApp == "graph") {
@@ -66,7 +79,7 @@ function openIframeSrc(src,callback) {
             Ext.create("MainPanel");
         })
     }
-    
+
     function getToolsMenu() {
         var downloadfile = new nw.MenuItem({
             label: 'Down Load File...',
@@ -211,8 +224,26 @@ function openIframeSrc(src,callback) {
         })
     }
 
-})()
-
+}
+function openIframeSrc(src, callback) {
+    var f;
+    Ext.onReady(function () {
+        f = document.getElementById("iframe")
+        if (f) {
+            f.src = src;
+        } else {
+            f = document.createElement("iframe");
+            f.id = 'bodyframe'
+            f.src = src;
+            f.style.height = document.body.height;
+            document.body.appendChild(f)
+        }
+        if (Ext.getCmp("mainPanel")) {
+            Ext.getCmp("mainPanel").hide()
+        }
+        callback(f)
+    })
+}
 
 // fs.readFile("json/config.json", function (err, buff) {
 //     var str = buff.toString()

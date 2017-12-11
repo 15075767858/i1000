@@ -1,12 +1,28 @@
 var express = require('express');
 var path = require("path")
-var config = require('./config');
-var iBacnet = require("./bacnet");
+//var config = require('./config');
+//var iBacnet = require("./bacnet");
 var xml2js = require("xml2js");
 var moment = require("moment");
 var app = express();
 var session = require('express-session')
-var programResourcesPath = "F:/i1000/src/program/resources/";
+app.use(session({
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true
+}))
+var programResourcesPath = path.join(path.parse(process.argv[1]).dir, "program/resources");
+
+//app.use(express.static(path.join(__dirname, 'program')));
+//app.use('/aaa', express.static(path.join(__dirname + 'program/bacstack')));
+//if(process.argv[2]=="test"){
+appRun()
+//}
+//var engines = require('consolidate');
+//console.log(path.join(__dirname, 'program'));
+//app.set('views', path.join(__dirname, 'program'))
+//app.engine('html', engines.hogan);
+app.use('/program', express.static(path.join(__dirname, 'program')));
 
 var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({
@@ -15,28 +31,36 @@ app.use(bodyParser.urlencoded({
 var redis = require("redis");
 var RedisDevice = require("./redis-device").RedisDevice;
 var fs = require("fs");
-var host;
-var port;
 
-var server = app.listen(80, function () {
-    host = server.address().address
-    port = server.address().port
+exports.appRun = appRun;
+function appRun(callback) {
+    server = app.listen(80, function () {
+        //console.log(server)
+        if (callback) {
+            callback(server)
+        }
+        var host = server.address().host;
+        var port = server.address().port;
+        process.stdout.write("serverport "+port+" ")
+        //process.stdout.write('end');
+        
+        //console.log("应用实例，访问地址为 http://%s:%s", host, port)
+    })
 
-    console.log("应用实例，访问地址为 http://%s:%s", host, port)
-})
+}
 app.get('/', function (req, res) {
-    res.send('Hello World');
+
+    //res.send('Hello World');
+    res.render("/index.html")
 })
-app.use(session({
-    secret: 'keyboard cat',
-    resave: false,
-    saveUninitialized: true
-}))
+
 app.get('/program/resources/main.php', function (req, res) {
     var ip = "127.0.0.1";
 
-    console.log(host, port)
-    var par = req.query.par;
+    //console.log(host, port)
+    var par = req.param("par");
+    console.log(par)
+    //var par = req.query.par;
     if (par == "getDeviceTree") {
         var redisDevice = new RedisDevice;
         redisDevice.ip = ip;
@@ -57,11 +81,12 @@ app.get('/program/resources/main.php', function (req, res) {
     }
 })
 
-app.get('/program/resources/test1.php', function (req, res) {
+app.all('/program/resources/api.php', function (req, res) {
     //res.send('Hello World!!!');
     var ip = "127.0.0.1";
     var par = req.param("par");
-
+    console.log(par)
+    //var par = req.query.par;
     if (par == "getDevsAll") {
         var redisDevice = new RedisDevice;
         redisDevice.getDevicesAll(null, function (devices) {
@@ -82,9 +107,11 @@ app.get('/program/resources/test1.php', function (req, res) {
                 })
                 console.log(xmlPath)
                 deviceXmlInit(xmlPath)
-                res.send("");
+
             })
         })
+        res.send("");
+
     }
     if (par == "moveXml") {
         //req.param("filename")
@@ -93,9 +120,9 @@ app.get('/program/resources/test1.php', function (req, res) {
         var key = req.param("key");
         var redisDevice = new RedisDevice;
         redisDevice.getAllKeysJson(function (err, obj) {
+            redisDevice.quit();
             res.send(obj[key]);
         })
-
     }
     if (par == "deleteKey") {
         var key = req.param("key");
@@ -145,11 +172,14 @@ app.get('/program/resources/test1.php', function (req, res) {
         })
     }
     if (par == "devPublish") {
+        
         var key = req.param("key");
         var value = req.param("value");
+        console.log(key,value)        
         var client = redis.createClient();
         client.publish(key, value, () => {
             client.quit();
+            res.send("");
         });
     }
     if (par == "delFile") {
@@ -180,11 +210,10 @@ app.get('/program/resources/test1.php', function (req, res) {
         res.send("");
     }
     if (par == "getKeys") {
-        var client = redis.createClient();
+        //var client = redis.createClient();
         var devname = req.param("devname");
         var redisDevice = new RedisDevice;
-
-        client.keys(devname + "*", function (err, keys) {
+        redisDevice.keys(devname + "*", function (err, keys) {
             keys.sort();
             var arr = [];
             redisDevice.getAllKeysJson(function (err, obj) {
@@ -193,7 +222,7 @@ app.get('/program/resources/test1.php', function (req, res) {
                     arr.push(obj[key]);
                 })
                 res.send(arr);
-                client.quit();
+                redisDevice.quit();
             })
         })
     }
@@ -330,7 +359,6 @@ app.get('/program/resources/test1.php', function (req, res) {
     if (par == "getnullschedule") {
         var nodeName = req.param("nodename");
         console.log(nodeName)
-
         var count = ["601", "602", "603", "604", "605", "606", "607", "608", "609", "610"];
         var redisDevice = new RedisDevice;
         redisDevice.getAllKeysJson(function (err, obj) {
@@ -387,6 +415,7 @@ app.get('/program/resources/test1.php', function (req, res) {
     if (par == "getDevxmls") {
         var dir = "devxml";
         dir = filePathTransform(dir);
+        console.log(dir);
         var files = fs.readdirSync(dir);
         res.send(files);
     }
@@ -410,22 +439,150 @@ app.get('/program/resources/test1.php', function (req, res) {
     if (par == "nodes") {
         var redisDevice = new RedisDevice;
         redisDevice.getAllKeysJson(function (err, obj) {
-            redisDevice.keysAll(function(err,keys){
-                keys.sort();                
-                var arr=[];
-                keys.forEach(function(key){
+            redisDevice.keysAll(function (err, keys) {
+                keys.sort();
+                var arr = [];
+                keys.forEach(function (key) {
                     arr.push({
-                        leaf:true,
-                        text:obj[key]["Object_Name"],
-                        value:key
+                        leaf: true,
+                        text: obj[key]["Object_Name"],
+                        value: key
                     })
                 })
                 res.send(arr);
             })
         })
     }
-    
+    if (par == "node") {
+        var nodeName = req.param("nodename");
+        var sortArr = ["Object_Identifier", "Object_Name", "Description", "Priority_Array", "Status_Flags", "Max_Pres_Value", "Min_pres_Value", "High_Limit", "Limit_Enable", "COV_Increment", "Event_Enable"];
+        var redisDevice = new RedisDevice;
+        redisDevice.hkeys(nodeName, function (err, arList) {
+            console.log(arguments)
+            var arr1 = array_intersect(sortArr, arList);//9
+            var arr2 = array_diff(arList, sortArr);//19
+            var arr3 = array_merge(arr1, arr2);//29
+            var parameters = ["Object_Name", "Description", "Present_Value", "Max_Pres_Value", "Min_pres_Value", "High_Limit", "Low_Limit", "COV_Increment", "Device_Type", "Offset", "Inactive_Text", "Active_Text"];
+            var event = ["Event_State", "Event_Enable"];
+            var alarm = ["Alarm_Enable", "Limit_Enable", "Time_Delay", "Acked_Transitions"];
+            if (req.param("type")) {
+                var type = req.param("type");
+                if (type == "parameters") {
+                    arr3 = array_intersect(arr3, parameters);
+
+                    if (isBIBOBV(nodeName)) {
+                        if (arr3.indexOf("Inactive_Text")) {
+                            arr3.push("Inactive_Text")
+                        }
+                        if (arr3.indexOf("Active_Text")) {
+                            arr3.push("Active_Text")
+                        }
+                    }
+                } else if (type == "event") {
+                    arr3 = array_intersect(arr3, event);
+                } else if (type == "alarm") {
+                    arr3 = array_intersect(arr3, alarm);
+                } else if (type == "other") {
+                    arr3 = array_diff(arr3, parameters);
+                    arr3 = array_diff(arr3, event);
+                    arr3 = array_diff(arr3, alarm);
+                }
+            }
+            redisDevice.hgetall(nodeName, function (err, obj) {
+                var allArr = [];
+                arr3.forEach(property => {
+                    allArr.push({
+                        type: property,
+                        value: obj[property]
+                    })
+                })
+                res.send(allArr);
+                redisDevice.quit();
+            })
+        })
+    }
+    if (par == "getreferencesdev") {
+        var nodeName = req.param("nodename").substr(0, 4);
+        var newArray = [];
+        var redisDevice = new RedisDevice;
+        redisDevice.keysAll(function (err, arList) {
+            arList.forEach(key => {
+                if (key[4] == 4 || key[4] == 5) {
+                    newArray.push(key);
+                }
+            })
+            redisDevice.quit();
+            res.send(newArray);
+        })
+    }
+    if (par == "getDevInfoFileNames") {
+        var directory = 'devsinfo';
+        var newArray = [];
+        var dir = filePathTransform(directory);
+        var files = fs.readdirSync(dir);
+        res.send(files);
+    }
+    if (par == "getDevFileNames") {
+        var directory = "/mnt/nandflash";
+        var newArray = [];
+        var dir = filePathTransform(directory);
+        var files = fs.readdirSync(dir);
+        res.send(files);
+    }
+    if (par == "dev") {
+        var arr = [];
+        var redisDevice = new RedisDevice;
+        redisDevice.keysAll(function (err, arList) {
+            arList.sort();
+            res.send(arList);
+            redisDevice.quit();
+        })
+    }
+    if (par == "uploadfiles") {
+    }
+
 })
+function array_intersect(sourceArr, targetArr) {
+    var arr = [];
+    sourceArr.forEach(element => {
+        if (targetArr.indexOf(element) >= 0) {
+            arr.push(element);
+        }
+    })
+    return arr;
+}
+function array_diff(sourceArr, targetArr) {
+    var arr = [];
+    sourceArr.forEach(element => {
+        if (targetArr.indexOf(element) < 0) {
+            arr.push(element);
+        }
+    })
+    return arr;
+}
+function array_merge(sourceArr, targetArr) {
+    var arr = [];
+    sourceArr.forEach(element => {
+        if (arr.indexOf(element) < 0) {
+            arr.push(element);
+        }
+    })
+    targetArr.forEach(element => {
+        if (arr.indexOf(element) < 0) {
+            arr.push(element);
+        }
+    })
+    return arr;
+}
+function isBIBOBV(nodeName) {
+    var four = nodeName.substr(4, 1);
+    if (four == "3" || four == "4" || four == "5") {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 function changeValue(nodeName, type, value, callback) {
     setRedisUpdateTime(nodeName);
     var client = redis.createClient();
@@ -492,7 +649,7 @@ app.all("/program/resources/xmlRW.php", function (req, res, next) {
     //var par = req.query.par;
     var rw = req.param("rw");
     var fileName = filePathTransform(req.param("fileName"));
-
+    
     if (rw == 'r') {
         if (!fs.existsSync(fileName)) {
             res.send("null");
