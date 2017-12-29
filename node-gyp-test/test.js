@@ -1,0 +1,11 @@
+const addon = require("./build/Release/addon");
+
+console.log(addon.hello());
+addon.hello1(function(a){
+    console.log(a)
+});
+console.log(addon.createobj("aa"))
+console.log(addon.CreateFunction("aa")())
+
+//`C:\Program Files (x86)\CodeSourcery\Sourcery G++ Lite\bin;C:\ProgramData\Oracle\Java\javapath;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\system32\config\systemprofile\.dnx\bin;C:\Program Files\Microsoft DNX\Dnvm\;C:\Program Files (x86)\Smartio\Smartiotools\php;C:\Program Files (x86)\Smartio\Smartiotools\php\ext;C:\Program Files (x86)\Smartio\Smartiotools\Apache24\bin;C:\Users\Administrator\Documents\Visual Studio 2015\Projects\SmartioInstall\ConsoleApplication1\php;C:\Users\Administrator\Documents\Visual Studio 2015\Projects\SmartioInstall\ConsoleApplication1\php\ext;C:\Users\Administrator\Documents\Visual Studio 2015\Projects\SmartioInstall\ConsoleApplication1\Apache24\bin;E:\SmartIOInstall\php;E:\SmartIOInstall\php\ext;E:\SmartIOInstall\Apache24\bin;E:\Sourcery_CodeBench_Lite_for_ARM_GNU_Linux\bin;E:\Microsoft VS Code\bin;E:\nodejs;C:\Python27;C:\Users\Administrator\AppData\Roaming\npm`
+//C:\Users\Administrator\AppData\Local\Programs\Python\Python35\Scripts\;C:\Users\Administrator\AppData\Local\Programs\Python\Python35\;C:\Program Files (x86)\CodeSourcery\Sourcery G++ Lite\bin;C:\ProgramData\Oracle\Java\javapath;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\system32\config\systemprofile\.dnx\bin;C:\Program Files\Microsoft DNX\Dnvm\;C:\Program Files (x86)\Smartio\Smartiotools\php;C:\Program Files (x86)\Smartio\Smartiotools\php\ext;C:\Program Files (x86)\Smartio\Smartiotools\Apache24\bin;C:\Users\Administrator\Documents\Visual Studio 2015\Projects\SmartioInstall\ConsoleApplication1\php;C:\Users\Administrator\Documents\Visual Studio 2015\Projects\SmartioInstall\ConsoleApplication1\php\ext;C:\Users\Administrator\Documents\Visual Studio 2015\Projects\SmartioInstall\ConsoleApplication1\Apache24\bin;E:\SmartIOInstall\php;E:\SmartIOInstall\php\ext;E:\SmartIOInstall\Apache24\bin;E:\Sourcery_CodeBench_Lite_for_ARM_GNU_Linux\bin;;;C:\Program Files (x86)\SmartIO\php;C:\Program Files (x86)\SmartIO\php\ext;C:\Program Files (x86)\SmartIO\Apache24\bin;E:\Microsoft VS Code\bin;E:\nodejs;C:\Python27;C:\Users\Administrator\AppData\Roaming\npm

@@ -1,0 +1,25 @@
+<service>
+	<id>i1000.exe</id>
+	<name>i1000</name>
+	<description>i1000Server</description>
+	<executable>F:\program edit\src\node.exe</executable>
+	<logmode>rotate</logmode>
+	<argument>--harmony</argument>
+	<argument>F:\program edit\src\node_modules\node-windows\lib\wrapper.js</argument>
+	<argument>--file</argument>
+	<argument>F:\program edit\src\run.js</argument>
+	<argument>--log</argument>
+	<argument>i1000 wrapper</argument>
+	<argument>--grow</argument>
+	<argument>0.25</argument>
+	<argument>--wait</argument>
+	<argument>1</argument>
+	<argument>--maxrestarts</argument>
+	<argument>3</argument>
+	<argument>--abortonerror</argument>
+	<argument>n</argument>
+	<argument>--stopparentfirst</argument>
+	<argument>undefined</argument>
+	<stoptimeout>30sec</stoptimeout>
+	<workingdirectory>F:\program edit\src</workingdirectory>
+</service>

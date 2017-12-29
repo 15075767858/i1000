@@ -1,0 +1,107 @@
+F:\program edit\src\node_modules\node-windows\lib\wrapper.js:177
+    child.send('shutdown');
+          ^
+
+TypeError: Cannot read property 'send' of null
+    at process.killkid (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:177:11)
+    at emitNone (events.js:106:13)
+    at process.emit (events.js:208:7)
+    at Signal.wrap.onsignal (internal/process.js:208:44)
+events.js:183
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: write EPIPE
+    at _errnoException (util.js:1024:11)
+    at ChildProcess.target._send (internal/child_process.js:702:20)
+    at ChildProcess.target.send (internal/child_process.js:586:19)
+    at process.killkid (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:177:11)
+    at emitNone (events.js:106:13)
+    at process.emit (events.js:208:7)
+    at Signal.wrap.onsignal (internal/process.js:208:44)
+events.js:183
+      throw er; // Unhandled 'error' event
+      ^
+
+Error [ERR_IPC_CHANNEL_CLOSED]: channel closed
+    at ChildProcess.target.send (internal/child_process.js:588:16)
+    at process.killkid (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:177:11)
+    at emitOne (events.js:116:13)
+    at process.emit (events.js:211:7)
+    at process.exit (internal/process.js:157:15)
+    at ChildProcess.<anonymous> (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:165:15)
+    at emitTwo (events.js:126:13)
+    at ChildProcess.emit (events.js:214:7)
+    at Process.ChildProcess._handle.onexit (internal/child_process.js:198:12)
+F:\program edit\src\node_modules\node-windows\lib\wrapper.js:177
+    child.send('shutdown');
+          ^
+
+TypeError: Cannot read property 'send' of null
+    at process.killkid (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:177:11)
+    at emitOne (events.js:116:13)
+    at process.emit (events.js:211:7)
+    at process.exit (internal/process.js:157:15)
+    at monitor (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:99:17)
+    at ChildProcess.<anonymous> (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:170:5)
+    at emitTwo (events.js:126:13)
+    at ChildProcess.emit (events.js:214:7)
+    at Process.ChildProcess._handle.onexit (internal/child_process.js:198:12)
+F:\program edit\src\node_modules\node-windows\lib\wrapper.js:177
+    child.send('shutdown');
+          ^
+
+TypeError: Cannot read property 'send' of null
+    at process.killkid (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:177:11)
+    at emitOne (events.js:116:13)
+    at process.emit (events.js:211:7)
+    at process.exit (internal/process.js:157:15)
+    at monitor (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:99:17)
+    at ChildProcess.<anonymous> (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:170:5)
+    at emitTwo (events.js:126:13)
+    at ChildProcess.emit (events.js:214:7)
+    at Process.ChildProcess._handle.onexit (internal/child_process.js:198:12)
+module.js:538
+    throw err;
+    ^
+
+Error: Cannot find module 'F:\program edit\src\run.js'
+    at Function.Module._resolveFilename (module.js:536:15)
+    at Function.Module._load (module.js:466:25)
+    at Function.Module.runMain (module.js:676:10)
+    at startup (bootstrap_node.js:187:16)
+    at bootstrap_node.js:608:3
+module.js:538
+    throw err;
+    ^
+
+Error: Cannot find module 'F:\program edit\src\run.js'
+    at Function.Module._resolveFilename (module.js:536:15)
+    at Function.Module._load (module.js:466:25)
+    at Function.Module.runMain (module.js:676:10)
+    at startup (bootstrap_node.js:187:16)
+    at bootstrap_node.js:608:3
+module.js:538
+    throw err;
+    ^
+
+Error: Cannot find module 'F:\program edit\src\run.js'
+    at Function.Module._resolveFilename (module.js:536:15)
+    at Function.Module._load (module.js:466:25)
+    at Function.Module.runMain (module.js:676:10)
+    at startup (bootstrap_node.js:187:16)
+    at bootstrap_node.js:608:3
+F:\program edit\src\node_modules\node-windows\lib\wrapper.js:177
+    child.send('shutdown');
+          ^
+
+TypeError: Cannot read property 'send' of null
+    at process.killkid (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:177:11)
+    at emitOne (events.js:116:13)
+    at process.emit (events.js:211:7)
+    at process.exit (internal/process.js:157:15)
+    at monitor (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:99:17)
+    at ChildProcess.<anonymous> (F:\program edit\src\node_modules\node-windows\lib\wrapper.js:170:5)
+    at emitTwo (events.js:126:13)
+    at ChildProcess.emit (events.js:214:7)
+    at Process.ChildProcess._handle.onexit (internal/child_process.js:198:12)

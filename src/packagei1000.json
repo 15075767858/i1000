@@ -1,0 +1,77 @@
+{
+  "name": "i1000",
+  "version": "1.1.2",
+  "description": "i1000",
+  "main": "i1000.js",
+  "scripts": {
+    "test": "electron .",
+    "build": "build --win --ia32"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "auto-launch": "^5.0.5",
+    "cap": "^0.1.2",
+    "dateformat": "^3.0.2",
+    "express": "^4.16.2",
+    "express-session": "^1.15.6",
+    "fs-extra": "^5.0.0",
+    "jsonfile": "^4.0.0",
+    "moment": "^2.19.4",
+    "node-windows": "^0.1.14",
+    "redis": "^2.8.0",
+    "url-parse": "^1.2.0",
+    "xml2js": "^0.4.19"
+  },
+  "devDependencies": {
+    "electron": "^1.7.10"
+  },
+  "build": {
+    "productName": "i1000",
+    "appId": "i1000.smartio.cc",
+    "directories": {
+      "output": "build"
+    },
+    "files": [
+      "app",
+      "assets",
+      "node_modules",
+      "index.js",
+      "js",
+      "view",
+      "styles",
+      "i1000.js"
+    ],
+    "extraResources": [
+      "WWW/redis-server.exe",
+      "run.bat"
+    ],
+    "extraFiles":[
+      "run.bat"
+    ],
+    "dmg": {
+      "contents": [
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
+      ]
+    },
+    "mac": {
+      "icon": "build/icons/icon.icns"
+    },
+    "win": {
+      "icon": "assets/i1000.ico"
+    },
+    "linux": {
+      "icon": "build/icons"
+    }
+  }
+}

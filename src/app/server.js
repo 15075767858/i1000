@@ -1,59 +1,80 @@
 var express = require('express');
 var path = require("path")
-//var config = require('./config');
-//var iBacnet = require("./bacnet");
 var xml2js = require("xml2js");
 var moment = require("moment");
 var app = express();
 var session = require('express-session')
+var bodyParser = require('body-parser');
+var redis = require("redis");
+var RedisDevice = require("./redis-device").RedisDevice;
+var child_process = require("child_process");
+var bacnetconfig = require("./bacnetconfig.js");
+var bacnetutil = require("./bacnetutil.js")
 app.use(session({
     secret: 'keyboard cat',
     resave: false,
     saveUninitialized: true
 }))
-var programResourcesPath = path.join(path.parse(process.argv[1]).dir, "program/resources");
+
+var fs = require("fs");
+//var programResourcesPath = path.join(path.parse(process.argv[1]).dir, "program/resources");
+var programPath = path.join(__dirname, "../WWW/program")
+if (path.extname(path.dirname(__dirname)) == ".asar") {
+    programPath = path.join(__dirname, "../../WWW/program")
+}
+var redisPath = path.join(programPath, "../redis-server.exe")
+//child_process.execSync(redisPath);
+child_process.spawn(redisPath)
+var programResourcesPath = path.join(programPath, "resources");
+//console.log(fs.writeFileSync("F:/a.text", process.resourcesPath))
 
 //app.use(express.static(path.join(__dirname, 'program')));
 //app.use('/aaa', express.static(path.join(__dirname + 'program/bacstack')));
 //if(process.argv[2]=="test"){
-appRun()
+//appRun()
 //}
 //var engines = require('consolidate');
 //console.log(path.join(__dirname, 'program'));
 //app.set('views', path.join(__dirname, 'program'))
 //app.engine('html', engines.hogan);
-app.use('/program', express.static(path.join(__dirname, 'program')));
+app.use('/program', express.static(programPath));
 
-var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({
     extended: true
 }));
-var redis = require("redis");
-var RedisDevice = require("./redis-device").RedisDevice;
-var fs = require("fs");
 
 exports.appRun = appRun;
-function appRun(callback) {
-    server = app.listen(80, function () {
+function appRun(port,callback) {
+
+    server = app.listen(port,function () {
         //console.log(server)
-        if (callback) {
-            callback(server)
-        }
         var host = server.address().host;
         var port = server.address().port;
-        process.stdout.write("serverport "+port+" ")
-        //process.stdout.write('end');
-        
-        //console.log("应用实例，访问地址为 http://%s:%s", host, port)
+        bacnetconfig.setBacnetConfig("serverport",port)
+        if (callback) {
+            callback(port)
+        }
+        process.stdout.write("serverport " + port + " ")
     })
-
 }
 app.get('/', function (req, res) {
-
     //res.send('Hello World');
     res.render("/index.html")
 })
+app.get("/bacnetapi",function(req,res){
+    var par = req.param("par");
+    if(par=="WhoIs"){
+        var par = req.param("par");
+        var adpuTimeout = req.param("adpuTimeout")
+        console.log(adpuTimeout)
+        bacnetutil.getWhoIsData2(adpuTimeout||3000,function(err,data){
+            res.send(data)
+        })
+    }
+    if(par=="readObjectInfo"){
 
+    }
+})
 app.get('/program/resources/main.php', function (req, res) {
     var ip = "127.0.0.1";
 
@@ -87,6 +108,35 @@ app.all('/program/resources/api.php', function (req, res) {
     var par = req.param("par");
     console.log(par)
     //var par = req.query.par;
+    if (par == "interfaceDeviceList") {
+        res.send(bacnetconfig.deviceList())
+    }
+    if (par == "getbacnetconfig") {
+        //bacnetconfig
+        var obj ={}
+        obj.success=true;
+        obj.data=bacnetconfig.getBacnetConfig()
+        res.send(obj);
+    }
+    if (par == "savebacnetconfig") {
+        var interfaceip = req.param("interfaceip");
+        var mode = req.param("mode");
+        var BACnet_transport_port = req.param("BACnet_transport_port");
+        var i1000_port =  req.param("i1000_port")
+        console.log(interfaceip,mode)
+        bacnetconfig.setBacnetConfig({
+            interfaceip: interfaceip,
+            mode: mode,
+            BACnet_transport_port:BACnet_transport_port,
+            i1000_port:i1000_port
+        })
+        
+        res.send({
+            success: true,
+            info: "ok"
+        })
+    }
+  
     if (par == "getDevsAll") {
         var redisDevice = new RedisDevice;
         redisDevice.getDevicesAll(null, function (devices) {
@@ -172,10 +222,10 @@ app.all('/program/resources/api.php', function (req, res) {
         })
     }
     if (par == "devPublish") {
-        
+
         var key = req.param("key");
         var value = req.param("value");
-        console.log(key,value)        
+        console.log(key, value)
         var client = redis.createClient();
         client.publish(key, value, () => {
             client.quit();
@@ -206,6 +256,13 @@ app.all('/program/resources/api.php', function (req, res) {
         client.save();
         client.BGSAVE();
         client.lastSave();
+        client.quit();
+        res.send("");
+    }
+    if (par == "clear") {
+        var client = redis.createClient();
+        client.flushdb()
+        client.save();
         client.quit();
         res.send("");
     }
@@ -649,7 +706,7 @@ app.all("/program/resources/xmlRW.php", function (req, res, next) {
     //var par = req.query.par;
     var rw = req.param("rw");
     var fileName = filePathTransform(req.param("fileName"));
-    
+
     if (rw == 'r') {
         if (!fs.existsSync(fileName)) {
             res.send("null");

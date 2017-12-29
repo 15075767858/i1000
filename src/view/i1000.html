@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../styles/theme-neptune-all.css">
+    <link rel="stylesheet" href="../styles/common.css">
+    <!-- <title>i1000</title> -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body,
+        iframe {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        iframe {
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <h1>Hello World!</h1>
+  We are using node
+  <script>document.write(process.versions.node)</script>, Chrome
+  <script>document.write(process.versions.chrome)</script>, and Electron
+  <script>document.write(process.versions.electron)</script>. -->
+</body>
+<script src="../js/jquery.min.js"></script>
+<script src="../js/ext-all.js"></script>
+<script src="../js/charts.js"></script>
+<script src="../js/ext-component.js"></script>
+<!-- <script src="../app/menu.js"></script> -->
+
+<script>
+    var iBACnet = require("../app/bacnet");
+    var bacnetutil = require("../app/bacnetutil");
+    var iFile = require("../app/file");
+    var url = require("url");
+    var urlparse = url.parse(location.href, true);
+
+    var MyProgramUrl="http://127.0.0.1:"+urlparse.query.serverPort+"/program/"
+    console.log(urlparse)
+    Ext.onReady(function(){
+        Ext.create("MainPanel")
+    })
+
+</script>
+<script src="../js/BACnetComponents.js"></script>
+
+</html>

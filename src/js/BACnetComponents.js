@@ -818,7 +818,7 @@ Ext.define("BACnetDownLoadFile", {
                                     var win = field.up("window");
                                     var viewModel = win.viewModel;
 
-                                    
+
                                     bacnetutil.checkUploadFile(viewModel.get("fileInstance"), newValue, viewModel.get("chooseDeivce") ? null : viewModel.get("deviceId") + "", function (err, result) {
                                         if (err) {
                                             Ext.MessageBox.show({
@@ -909,11 +909,138 @@ Ext.onReady(function () {
 Ext.define("MainPanel", {
     extend: "Ext.panel.Panel",
     id: "mainPanel",
-    title: "",
+    title: "i1000",
     renderTo: Ext.getBody(),
     width: "100%",
     height: "100%",
     layout: "border",
+    tbar: {
+        overflowHandler: 'menu',
+        items: [
+            {
+                xtype: 'button',
+                text: "File",
+                menu: [{
+                    text: 'New Project',
+                    handler: function () {
+
+                        var projectWin = Ext.create("Ext.window.Window", {
+                            title: "new Project",
+                            autoShow: true,
+                            width: 340,
+                            height: 210,
+                            buttons: [{
+                                text: "Ok",
+                                handler: function () {
+                                    var projectName = projectWin.down("#projectName").getValue()
+                                    var location = projectWin.down("#location").getValue()
+                                    if (!!projectName & !!location) {
+                                        var npath = iFile.createProject(location, projectName);
+                                        projectWin.close()
+                                        Ext.Msg.alert("new project", "ok . " + location + "/" + projectName);
+                                        Ext.getCmp("mainPanel").loadProject(npath)
+                                    }
+                                }
+                            }, {
+                                text: "Cancel",
+                                handler: function () {
+                                    projectWin.close()
+                                }
+                            }
+                            ],
+                            items: {
+                                margin: "10",
+                                xtype: 'fieldset',
+                                columnWidth: 0.5,
+                                border: 0,
+                                defaults: {
+                                    border: 0,
+                                    margin: "10 0 0 0"
+                                },
+                                items: [
+                                    {
+                                        fieldLabel: "Project Name",
+                                        xtype: "textfield",
+                                        itemId: "projectName",
+                                        allowBlank: false,
+                                    }, {
+                                        fieldLabel: "Location",
+                                        xtype: "textfield",
+                                        itemId: "location",
+                                        allowBlank: false,
+                                    }, {
+                                        text: "...",
+                                        xtype: "button",
+                                        handler: function () {
+                                            Ext.create("SelectFileWindow", {
+                                                title: "Select Workspace",
+                                                callback: function (select) {
+                                                    projectWin.down("#location").setValue(select[0].data.path)
+                                                    this.close();
+                                                }
+                                            })
+                                        }
+                                    }
+                                ]
+                            }
+                        })
+
+                    }
+                }, {
+                    text: 'Open Workspace',
+                    handler: function () {
+                        Ext.create("SelectFileWindow", {
+                            title: "Open Workspace",
+                            filePath: "",
+                            callback: function (select) {
+                                var path = select[0].data.path;
+
+                                Ext.getCmp("mainPanel").loadProject(path)
+                                this.close()
+                            }
+                        })
+                    }
+                }]
+            },
+            {
+                text: "Tools",
+                menu: [
+                    {
+                        text: 'Download File ...',
+                        handler: function () {
+                            Ext.create("BACnetDownLoadFile")
+                        }
+                    }, {
+                        text: 'BACnet Discovery Wizard...',
+                        handler: function () {
+                            if (!Ext.getCmp("mainPanel").isOpenProject) {
+                                Ext.Msg.alert("Message", "Please open a project first.")
+                                return;
+                            }
+                            var win;
+                            if (win = Ext.getCmp("ConfigBACnet")) {
+                                win.show();
+                            } else {
+                                Ext.create("ConfigBACnet")
+                            }
+                        }
+                    },{
+                        text:"BACnet Config ...",
+                        handler:function(){
+                            Ext.create("program.view.bacnet.ConfigWindow")
+                        }
+                    }, {
+                        text: 'Modbus Configuration Wizard...',
+                        handler: function () {
+
+                        }
+                    }, {
+                        text: 'About...'
+                    }
+                ]
+            },
+        ]
+    },
     loadProject: function (path) {
         var me = this;
         var res = iFile.loadProject(path);
@@ -979,7 +1106,6 @@ Ext.define("MainPanel", {
     //     me.callParent();
     // }
 })
-
 
 Ext.define("SelectFileTree", {
     extend: "Ext.tree.TreePanel",
@@ -1126,3 +1252,202 @@ Ext.define("PointGrid", {
     ]
 })
 
+if(typeof MyProgramUrl=="undefined"){
+    MyProgramUrl=""
+}
+Ext.define('program.view.bacnet.ConfigWindow', {
+
+    extend: 'Ext.window.Window',
+    xtype: "BACnetConfigWindow",
+    autoShow: true,
+    title: "BACnet Config",
+    width: 600,
+    height: 230,
+    initComponent: function () {
+        var me = this;
+        me.callParent();
+    },
+    viewModel: {
+        data: {
+            name: 'program',
+            InterfaceStore: Ext.create("Ext.data.Store", {
+                fields: ["name", "description", {
+                    name: "displayField",
+                    convert: function (value, model) {
+                        console.log(arguments)
+                        var addresses = model.data.addresses[0];
+                        if (addresses) {
+                            return [
+                                model.data.description,
+                                "address : " + addresses.addr,
+                                "netmask : " + addresses.netmask,
+                                "broadaddr : " + addresses.broadaddr,
+                                "name : " + model.data.name
+                            ].join("<br>");
+                            //return model.data.description + " addr:" + addresses.addr+" netmask:"+addresses.netmask+" broadaddr:"+addresses.broadaddr;
+                        } else {
+                            return ""
+                        }
+                    }
+                }, {
+                        name: "valueField",
+                        convert: function (value, model) {
+                            var addresses = model.data.addresses[0];
+                            if (addresses) {
+                                return addresses.addr;
+                            } else {
+                                return "";
+                            }
+                        }
+                    }],
+                proxy: {
+                    type: 'ajax',
+                    url: MyProgramUrl + 'resources/api.php?par=interfaceDeviceList',
+                    reader: {
+                        type: 'json',
+                    }
+                },
+                autoLoad: true,
+            })
+        },
+        formulas: {
+            InterfaceValue: function () {
+                var config = this._view.getBacnetConfig();
+                console.log(config)
+                return config.Interface || "";
+            }
+        }
+    },
+    getBacnetConfig: function (config) {
+        var obj = {}
+        Ext.Ajax.request({
+            async: false,
+            url: "resources/api.php?par=getbacnetconfig",
+            success: function (response) {
+                try {
+                    obj = Ext.decode(response.responseText).data;
+                    console.dir(obj);
+                } catch (err) {
+                    console.log(err);
+                }
+            }
+        })
+        return config ? obj[config] : obj;
+    },
+    controller: {
+        formReady: function (form) {
+            console.log(this)
+            //var url = "http://192.168.31.88/program/resources/api.php?par=getbacnetconfig"
+            form.load({
+                url: MyProgramUrl + "resources/api.php?par=getbacnetconfig",
+                success: function (form, action) {
+                    console.log("success", arguments)
+                    //delayToast("info",action.result.info)
+                    //form.setValues(action.result)
+                },
+                failure: function (form, action) {
+                    console.log("failure", arguments)
+                    Ext.Msg.alert("info", action.response.responseText)
+                }
+            })
+        },
+        OkHandler: function (bt) {
+            var window = this.view;
+            var form = window.down("form");
+            var values = form.getValues()
+            //var url = "http://192.168.31.88/program/resources/api.php?par=savebacnetconfig"
+            form.submit({
+                method: "get",
+                url: MyProgramUrl + "resources/api.php?par=savebacnetconfig",
+                success: function (form, action) {
+                    console.log("success", arguments)
+                    //delayToast("info",action.result.info)
+
+                    window.close();
+                },
+                failure: function (form, action) {
+                    console.log("failure", arguments)
+                    Ext.Msg.alert("failure", action.response.responseText)
+                }
+            })
+        },
+        CancelHandler: function () {
+            this.view.close();
+        }
+    },
+    
+    items: {
+        xtype: "form",
+        url: 'save-form.php',
+        //viewModel:button.viewModel,
+        defaults: {
+            margin: 10,
+            labelWidth: 200,
+        },
+        listeners: {
+            boxready: "formReady"
+        },
+        items: [{
+            xtype: 'radiogroup',
+            fieldLabel: 'Present_Value_Mode',
+            columns: 3,
+            vertical: true,
+            simpleValue: true, // set simpleValue to true to enable value binding
+            items: [{
+                boxLabel: 'static',
+                name: 'mode',
+                inputValue: 1
+            },
+            {
+                boxLabel: 'active',
+                name: 'mode',
+                inputValue: 2
+            },
+            {
+                boxLabel: 'COV',
+                disabled: true,
+                name: 'mode',
+                inputValue: 3
+            }
+            ]
+        }, {
+            xtype: "combo",
+            fieldLabel: "Interface",
+            name: "interfaceip",
+            width: 510,
+            displayField: "displayField",
+            valueField: "valueField",
+            queryMode: "remote",
+            bind: {
+                store: "{InterfaceStore}",
+            }
+        },{
+            xtype:"numberfield",
+            fieldLabel:"BACnet transport port",
+            name:"BACnet_transport_port",
+            minValue:0,
+            maxValue:65535,
+            value:47808
+        },{
+            xtype:"numberfield",
+            fieldLabel:"i1000 port",
+            name:"i1000_port",
+            minValue:0,
+            maxValue:65535,
+            value:80
+        }]
+    },
+    buttons: [{
+        text: "Ok",
+        handler: "OkHandler"
+    },
+    {
+        text: "Cancel",
+        handler: "CancelHandler"
+    }
+    ],
+    listeners: {
+        boxready: function () {
+        }
+    }
+});

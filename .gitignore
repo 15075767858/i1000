@@ -1,5 +1,2 @@
-# Windows:
 /node_modules
-/dist
-/src/program
-/src/node_modules
+/test

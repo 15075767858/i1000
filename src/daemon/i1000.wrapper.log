@@ -1,0 +1,73 @@
+2017-12-28 15:43:31 - Starting F:\program edit\src\node.exe  --harmony "F:\program edit\src\node_modules\node-windows\lib\wrapper.js" --file "F:\program edit\src\run.js" --log "i1000 wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2017-12-28 15:43:31 - Started 11460
+2017-12-28 15:43:40 - Stopping i1000.exe
+2017-12-28 15:43:40 - ProcessKill 11460
+2017-12-28 15:43:40 - Found child process: 11468 Name: node.exe
+2017-12-28 15:43:41 - Found child process: 9676 Name: i1000.exe
+2017-12-28 15:43:41 - Stopping process 9676
+2017-12-28 15:43:41 - Send SIGINT 9676
+2017-12-28 15:43:41 - SIGINT to 9676 failed - Killing as fallback
+2017-12-28 15:43:41 - Stopping process 11468
+2017-12-28 15:43:41 - Send SIGINT 11468
+2017-12-28 15:43:41 - SIGINT to 11468 failed - Killing as fallback
+2017-12-28 15:43:41 - Stopping process 11460
+2017-12-28 15:43:41 - Send SIGINT 11460
+2017-12-28 15:43:41 - SIGINT to11460 successful
+2017-12-28 15:43:41 - Finished i1000.exe
+2017-12-28 15:43:42 - Starting F:\program edit\src\node.exe  --harmony "F:\program edit\src\node_modules\node-windows\lib\wrapper.js" --file "F:\program edit\src\run.js" --log "i1000 wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2017-12-28 15:43:42 - Started 7868
+2017-12-28 15:46:17 - Stopping i1000.exe
+2017-12-28 15:46:17 - ProcessKill 7868
+2017-12-28 15:46:17 - Shutdown exception
+Message:系统正在关机。 (异常来自 HRESULT:0x8007045B)
+Stacktrace:   在 System.Runtime.InteropServices.Marshal.ThrowExceptionForHRInternal(Int32 errorCode, IntPtr errorInfo)
+   在 System.Management.ManagementScope.InitializeGuts(Object o)
+   在 System.Management.ManagementScope.Initialize()
+   在 System.Management.ManagementObjectSearcher.Initialize()
+   在 System.Management.ManagementObjectSearcher.Get()
+   在 winsw.WrapperService.GetChildPids(Int32 pid)
+   在 winsw.WrapperService.StopProcessAndChildren(Int32 pid)
+   在 winsw.WrapperService.StopIt()
+   在 winsw.WrapperService.OnShutdown()
+2017-12-28 15:46:51 - Starting F:\program edit\src\node.exe  --harmony "F:\program edit\src\node_modules\node-windows\lib\wrapper.js" --file "F:\program edit\src\run.js" --log "i1000 wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2017-12-28 15:46:51 - Started 2584
+2017-12-28 15:54:37 - Stopping i1000.exe
+2017-12-28 15:54:37 - ProcessKill 2584
+2017-12-28 15:54:38 - Found child process: 3712 Name: node.exe
+2017-12-28 15:54:38 - Found child process: 4424 Name: i1000.exe
+2017-12-28 15:54:38 - Stopping process 4424
+2017-12-28 15:54:38 - Send SIGINT 4424
+2017-12-28 15:54:38 - SIGINT to 4424 failed - Killing as fallback
+2017-12-28 15:54:38 - Stopping process 3712
+2017-12-28 15:54:38 - Send SIGINT 3712
+2017-12-28 15:54:38 - SIGINT to 3712 failed - Killing as fallback
+2017-12-28 15:54:38 - Stopping process 2584
+2017-12-28 15:54:38 - Send SIGINT 2584
+2017-12-28 15:54:39 - SIGINT to2584 successful
+2017-12-28 15:54:39 - Finished i1000.exe
+2017-12-28 15:54:40 - Starting F:\program edit\src\node.exe  --harmony "F:\program edit\src\node_modules\node-windows\lib\wrapper.js" --file "F:\program edit\src\run.js" --log "i1000 wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2017-12-28 15:54:40 - Started 1048
+2017-12-28 15:56:41 - Stopping i1000.exe
+2017-12-28 15:56:41 - ProcessKill 1048
+2017-12-28 15:56:41 - Found child process: 4212 Name: node.exe
+2017-12-28 15:56:41 - Found child process: 2868 Name: i1000.exe
+2017-12-28 15:56:42 - Found child process: 6200 Name: i1000.exe
+2017-12-28 15:56:42 - Stopping process 6200
+2017-12-28 15:56:42 - Send SIGINT 6200
+2017-12-28 15:56:42 - SIGINT to 6200 failed - Killing as fallback
+2017-12-28 15:56:42 - Stopping process 2868
+2017-12-28 15:56:42 - Send SIGINT 2868
+2017-12-28 15:56:42 - SIGINT to 2868 failed - Killing as fallback
+2017-12-28 15:56:42 - Stopping process 4212
+2017-12-28 15:56:42 - Send SIGINT 4212
+2017-12-28 15:56:42 - SIGINT to 4212 failed - Killing as fallback
+2017-12-28 15:56:42 - Stopping process 1048
+2017-12-28 15:56:42 - Send SIGINT 1048
+2017-12-28 15:56:43 - SIGINT to1048 successful
+2017-12-28 15:56:43 - Finished i1000.exe
+2017-12-28 15:56:43 - Starting F:\program edit\src\node.exe  --harmony "F:\program edit\src\node_modules\node-windows\lib\wrapper.js" --file "F:\program edit\src\run.js" --log "i1000 wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2017-12-28 15:56:43 - Started 5512
+2017-12-28 19:11:48 - Starting F:\program edit\src\node.exe  --harmony "F:\program edit\src\node_modules\node-windows\lib\wrapper.js" --file "F:\program edit\src\run.js" --log "i1000 wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2017-12-28 19:11:49 - Started 2436
+2017-12-29 17:44:51 - Starting F:\program edit\src\node.exe  --harmony "F:\program edit\src\node_modules\node-windows\lib\wrapper.js" --file "F:\program edit\src\run.js" --log "i1000 wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2017-12-29 17:44:51 - Started 2584

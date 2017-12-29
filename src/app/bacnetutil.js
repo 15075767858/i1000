@@ -12,6 +12,7 @@ var path = require("path");
 //     console.log(arguments)
 // })
 
+
 // var device = { "npdu": { "len": 10, "funct": 40, "destination": { "type": 0, "net": 65535 }, "source": { "type": 0, "net": 1100, "adr": [63] }, "hopCount": 255, "networkMsgType": 0, "vendorId": 0 }, "address": "192.168.253.253", "deviceId": 1063, "maxApdu": 480, "segmentation": 0, "vendorId": 913, "net": 1100, "adr": 63, "id": "extModel63-1", "show": "Instance:1063 NET:1100 MAC:63" }
 // writeFile(device, 2, true, "C:\\Users\\Administrator\\Desktop\\程序文件\\1033.xml",
 //     function () {
@@ -131,7 +132,8 @@ function readPropertyMultiple(client, address, objectType, instance, propertyIde
     if (!client) {
         isHaveClient = false;
         client = new bacnet({
-            adpuTimeout: 10000
+            adpuTimeout: 10000,
+            //interface:"192.168.22.22"
         })
     }
     var requestArray = [{
@@ -183,6 +185,7 @@ function getObjectParsentValue(client, address, objectType, instance, callback) 
 }
 exports.getObjectParsentValue = getObjectParsentValue;
 var address = { address: '192.168.253.253', net: 1100, adr: [63] }
+
 //105 80
 // getObjListToTreeData(address, 1, 1, 105, function () {
 //     console.log(arguments)

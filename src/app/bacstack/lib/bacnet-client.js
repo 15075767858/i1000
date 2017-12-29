@@ -10,7 +10,7 @@ var baAdpu = require('./bacnet-adpu');
 var baNpdu = require('./bacnet-npdu');
 var baBvlc = require('./bacnet-bvlc');
 var baEnum = require('./bacnet-enum');
-
+var bacnetconfig = require("../../bacnetconfig");
 /**
  * To be able to communicate to BACNET devices, you have to initialize a new bacstack instance.
  * @class bacstack
@@ -43,25 +43,27 @@ module.exports = function (options) {
   var segmentStore = [];
 
   options = options || {};
+  var bacnetTransport = bacnetconfig.getBacnetTransport();
   var settings = {
     port: options.port || 47808,
-    interface: options.interface,
+    interface:  options.interface,
     transport: options.transport,
     broadcastAddress: options.broadcastAddress || '255.255.255.255',
     adpuTimeout: options.adpuTimeout || 3000
   };
-
+  console.log(bacnetTransport)  
+  
   var transport = settings.transport || new baTransport({
-    port: settings.port,
-    interface: settings.interface,
-    broadcastAddress: settings.broadcastAddress
+    port:bacnetTransport.port|| settings.port,//端口
+    interface:bacnetTransport.addr || settings.interface,
+    broadcastAddress: bacnetTransport.broadaddr || settings.broadcastAddress
   });
-
+  console.log(settings,transport)
+  
   // Helper utils
   var getInvokeId = function () {
     var id = invokeCounter++;
     if (id >= 256) invokeCounter = 1;
-
     return id - 1;
   };
 
@@ -653,7 +655,7 @@ module.exports = function (options) {
     var invokeId = getInvokeId();
     baNpdu.encode(buffer, baEnum.BacnetNpduControls.PRIORITY_NORMAL_MESSAGE | baEnum.BacnetNpduControls.EXPECTING_REPLY, address);
     baAdpu.encodeConfirmedServiceRequest(buffer,
-      baEnum.BacnetPduTypes.PDU_TYPE_CONFIRMED_SERVICE_REQUEST | ((fileBuffer.length!=450) ? 0 : baEnum.BacnetPduTypes.MORE_FOLLOWS),
+      baEnum.BacnetPduTypes.PDU_TYPE_CONFIRMED_SERVICE_REQUEST | ((fileBuffer.length != 450) ? 0 : baEnum.BacnetPduTypes.MORE_FOLLOWS),
       baEnum.BacnetConfirmedServices.SERVICE_CONFIRMED_ATOMIC_WRITE_FILE,
       maxSegments,
       baEnum.BacnetMaxAdpu.MAX_APDU1476,

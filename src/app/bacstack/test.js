@@ -29,9 +29,9 @@ client.on('iAm', function (device) {
 //readDeviceInfo("192.168.253.253", "1031");
 
 //readDeviceInfo({ address: "192.168.253.253", net: "1100", adr: ["31"] }, "1031");
-readDeviceInfo({ address: "192.168.253.253", net: "1100", adr: ["3"] }, "1103");
+//readDeviceInfo({ address: "192.168.253.253", net: "1100", adr: ["3"] }, "1103");
 
-//readObjectInfo({ address: "192.168.253.253", net: "1100", adr: ["31"] }, "1031")
+//readObjectInfo({ address: "192.168.253.253", net: "1100", adr: ["63"] }, "1063")
 function readObjectInfo(ip, instance, callback) {
     var requestArray = [{
         objectIdentifier: {

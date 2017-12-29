@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>program edit</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body,
+    iframe {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    iframe {
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- <h1>Hello World!</h1>
+  We are using node
+  <script>document.write(process.versions.node)</script>, Chrome
+  <script>document.write(process.versions.chrome)</script>, and Electron
+  <script>document.write(process.versions.electron)</script>. -->
+</body>
+<script>
+  var iBACnet = require("../app/bacnet");
+  var bacnetutil = require("../app/bacnetutil");
+  var iFile = require("../app/file");
+  var url = require("url");
+  var urlparse = url.parse(location.href,true);
+  //openIframeSrc("http://192.168.31.188/program?a=" + Math.random()+"#nopassword", function (page) {
+  openIframeSrc("http://127.0.0.1:" + urlparse.query.serverPort + "/program#nopassword?a=" + Math.random(), function (page) {
+      const bacnetInterface = {
+        iBACnet: iBACnet,
+        bacnetutil: bacnetutil,
+        iFile: iFile
+      }
+      frames[0].bacnetInterface = bacnetInterface;
+    })
+  // server.appRun(function (port) {
+    
+  // })
+
+
+
+  function openIframeSrc(src, callback) {
+    var f;
+    f = document.getElementById("iframe")
+    if (f) {
+      f.src = src;
+    } else {
+      f = document.createElement("iframe");
+      f.id = 'bodyframe'
+      f.src = src;
+      f.style.height = document.body.height;
+      document.body.appendChild(f)
+    }
+    f.onload = function () {
+      if (callback)
+        callback(f)
+    }
+
+  }
+</script>
+
+</html>

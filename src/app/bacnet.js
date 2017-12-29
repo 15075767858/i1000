@@ -8,7 +8,6 @@ var xmlbuilder = require("xmlbuilder");
 var crc = require("./crc");
 
 
-
 // Discover Devices
 //client.on('iAm', function (device) {
 //console.log(device)
@@ -64,7 +63,6 @@ function test() {
                 'OBJECT_PULSE_CONVERTER',
                 'OBJECT_SCHEDULE',
                 'OBJECT_TRENDLOG'];
-
 
             propertys.forEach(function (Property_Name, index) {
                 var Object_Type = bacnetenum.BacnetObjectTypes[Property_Name]
