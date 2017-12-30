@@ -1,6 +1,6 @@
 {
   "name": "drive",
-  "version": "1.0.5",
+  "version": "1.0.8",
   "description": "bacnet drive",
   "main": "drive.js",
   "scripts": {
@@ -36,13 +36,17 @@
       "app",
       "assets",
       "node_modules",
-      "drive.js",
-      "svg.js"
+      "view",
+      "js",
+      "view",
+      "styles",
+      "drive.js"
     ],
     "extraResources": [
       "WWW/redis-server.exe"
     ],
     "extraFiles":[
+      "drive"
     ],
     "dmg": {
       "contents": [

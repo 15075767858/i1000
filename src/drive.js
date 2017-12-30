@@ -4,10 +4,8 @@ const path = require('path')
 const url = require('url')
 var fs = require("fs");
 var bacnetconfig= require("./app/bacnetconfig")
-//var child_process= require("child_process");
-//child_process.spawnSync("./node.exe",['svg.js'])
-var svc= require("./svg");
-svc.install(process.argv0)
+//var svc= require("./app/svc");
+//svc.install(process.argv0)
 console.log(process.argv)
 var server = require("./app/server")
 try{
@@ -30,12 +28,20 @@ function createConfigWindow() {
   configwin = new BrowserWindow({ width: 630, height: 290 })
   // 然后加载应用的 index.html。
   //bacnetconfig.getBacnetConfig("i1000_port")
-  configwin.setTitle("driver run.")
+
+  configwin.setTitle("BACnet drive")
+  var urlpath = url.format({
+    pathname: path.join(__dirname, 'view/drive.html'),
+    protocol: 'file:',
+    slashes: true
+  })
+  configwin.loadURL(urlpath)
+
   configwin.show()
   
   //win.loadURL('https://www.w3cschool.cn');
   // 打开开发者工具。
-  //win.webContents.openDevTools()
+  configwin.webContents.openDevTools()
 
   // 当 window 被关闭，这个事件会被触发。
   configwin.on('closed', () => {

@@ -1,6 +1,6 @@
 {
   "name": "i1000",
-  "version": "1.1.2",
+  "version": "1.1.5",
   "description": "i1000",
   "main": "i1000.js",
   "scripts": {
@@ -36,7 +36,6 @@
       "app",
       "assets",
       "node_modules",
-      "index.js",
       "js",
       "view",
       "styles",
