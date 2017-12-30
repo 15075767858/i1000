@@ -37,7 +37,11 @@
 <script>
     var child_process = require("child_process")
     var svc = require("../app/svc");
+    var path = require("path")
     Ext.onReady(function () {
+        var exeDir = path.dirname(process.argv0)
+        var nodepath = path.join(exeDir, "drive/node.exe");
+        var svcpath = path.join(exeDir, "drive/svc.js");
         Ext.create("Ext.panel.Panel", {
             renderTo: Ext.getBody(),
             width: "100%",
@@ -50,14 +54,15 @@
                     handler: function () {
                         var exepath = process.argv0;
                         console.log(exepath)
-                        var message = child_process.execFileSync("drive/node.exe", ['drive/svc.js', 'install', process.argv0]).toString()
+
+                        var message = child_process.execFileSync(nodepath, [svcpath, 'install', process.argv0]).toString()
                         Ext.Msg.alert("message", message)
                     }
                 }, {
                     xtype: "button",
                     text: "uninstall server",
                     handler: function () {
-                        var message = child_process.execFileSync("drive/node.exe", ['drive/svc.js', 'uninstall']).toString()
+                        var message = child_process.execFileSync(nodepath, [svcpath, 'uninstall']).toString()
                         Ext.Msg.alert("message", message)
                     }
                 }

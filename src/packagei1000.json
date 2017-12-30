@@ -43,10 +43,8 @@
     ],
     "extraResources": [
       "WWW/redis-server.exe",
-      "run.bat"
     ],
     "extraFiles":[
-      "run.bat"
     ],
     "dmg": {
       "contents": [
