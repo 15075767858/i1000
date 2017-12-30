@@ -25,7 +25,7 @@ var jsonfile = require("jsonfile");
 //     programPath = path.join(__dirname, "../../WWW/program")
 // }
 //var configFilePath = path.join(programPath, "resources/bacnetconfig.json");
-var configFilePath = "C:/i1000/dirve/bacnet/config.json"
+var configFilePath = "C:/i1000/drive/bacnet/config.json"
 function getBacnetConfig(config) {
     if (!fs.existsSync(configFilePath)) {
         fs.ensureFileSync(configFilePath);

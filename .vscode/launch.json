@@ -9,7 +9,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceFolder}/src/app/bacnetconfig.js"
+            "program": "${workspaceFolder}/src/svc.js"
         }
     ]
 }
