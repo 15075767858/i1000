@@ -44,13 +44,13 @@ app.use(bodyParser.urlencoded({
 }));
 
 exports.appRun = appRun;
-function appRun(port,callback) {
+function appRun(port, callback) {
 
-    server = app.listen(port,function () {
+    server = app.listen(80 || port, function () {
         //console.log(server)
         var host = server.address().host;
         var port = server.address().port;
-        bacnetconfig.setBacnetConfig("serverport",port)
+        bacnetconfig.setBacnetConfig("serverport", port)
         if (callback) {
             callback(port)
         }
@@ -61,18 +61,37 @@ app.get('/', function (req, res) {
     //res.send('Hello World');
     res.render("/index.html")
 })
-app.get("/bacnetapi",function(req,res){
+app.get("/bacnetapi", function (req, res) {
     var par = req.param("par");
-    if(par=="WhoIs"){
-        var par = req.param("par");
-        var adpuTimeout = req.param("adpuTimeout")
-        console.log(adpuTimeout)
-        bacnetutil.getWhoIsData2(adpuTimeout||3000,function(err,data){
+    console.log(par)
+    if (par == "getDevicesToTreeData") {
+        bacnetutil.getDevicesToTreeData(function (err, data) {
             res.send(data)
         })
     }
-    if(par=="readObjectInfo"){
-
+    if (par == "getObjectsToTreeData") {
+        var device = req.param("device");
+        var propertyIdentifier = req.param("propertyIdentifier");
+        bacnetutil.getObjectsToTreeData(device, propertyIdentifier, function (err, data) {
+            res.send(data);
+        })
+    }
+    if (par == "getObjListToTreeData") {
+        var device = req.param("device");
+        var objectType = req.param("objectType");
+        var instance = req.param("instance");
+        var propertyIdentifier = req.param("propertyIdentifier");
+        bacnetutil.getObjListToTreeData(device, objectType, instance, propertyIdentifier, function (err, data) {
+            res.send(data);
+        })
+    }
+    if (par == "getObjectParsentValue") {
+        var address = req.param("address");
+        var objectType = req.param("objectType");
+        var instance = req.param("instance");
+        bacnetutil.getObjectParsentValue(null, address, objectType, instance, function (err, data) {
+            res.send(data)
+        })
     }
 })
 app.get('/program/resources/main.php', function (req, res) {
@@ -113,30 +132,30 @@ app.all('/program/resources/api.php', function (req, res) {
     }
     if (par == "getbacnetconfig") {
         //bacnetconfig
-        var obj ={}
-        obj.success=true;
-        obj.data=bacnetconfig.getBacnetConfig()
+        var obj = {}
+        obj.success = true;
+        obj.data = bacnetconfig.getBacnetConfig()
         res.send(obj);
     }
     if (par == "savebacnetconfig") {
         var interfaceip = req.param("interfaceip");
         var mode = req.param("mode");
         var BACnet_transport_port = req.param("BACnet_transport_port");
-        var i1000_port =  req.param("i1000_port")
-        console.log(interfaceip,mode)
+        var i1000_port = req.param("i1000_port")
+        console.log(interfaceip, mode)
         bacnetconfig.setBacnetConfig({
             interfaceip: interfaceip,
             mode: mode,
-            BACnet_transport_port:BACnet_transport_port,
-            i1000_port:i1000_port
+            BACnet_transport_port: BACnet_transport_port,
+            i1000_port: i1000_port
         })
-        
+
         res.send({
             success: true,
             info: "ok"
         })
     }
-  
+
     if (par == "getDevsAll") {
         var redisDevice = new RedisDevice;
         redisDevice.getDevicesAll(null, function (devices) {

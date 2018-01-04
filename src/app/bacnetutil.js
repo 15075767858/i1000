@@ -21,6 +21,9 @@ var path = require("path");
 // )
 //getDevicesToTreeData()
 //获得 treepanel 的设备
+var devicesObj = {};
+exports.devices = devicesObj;
+
 function getDevicesToTreeData(callback) {
     getWhoIsData2(3000, function (err, devices, client) {
         if (devices) {
@@ -31,11 +34,24 @@ function getDevicesToTreeData(callback) {
                 device.leaf = false;
             })
         }
-        callback(err, devices);
+        if (callback) {
+            callback(err, devices);
+        } else {
+            console.log('no callback', devices)
+        }
     })
 }
 //getObjectsToTreeData("1063")
+
+
 function getObjectsToTreeData(device, propertyIdentifier, callback) {
+    if (typeof device == 'number') {
+        device += "";
+    }
+    if (typeof device == "string") {
+        device = devicesObj[device];
+    }
+    console.log(arguments)
     readPropertyMultiple(null, device, 8, device.deviceId, propertyIdentifier, null, function (err, result) {
         if (!err) {
             var resObj = [];
@@ -74,6 +90,7 @@ function getObjectsToTreeData(device, propertyIdentifier, callback) {
 
                 }
             }
+            console.log(JSON.stringify(resObj))
             callback(null, resObj);
         }
     })
@@ -150,7 +167,7 @@ function readPropertyMultiple(client, address, objectType, instance, propertyIde
     }
     client.readPropertyMultiple(address, requestArray, function (err, result) {
         if (err) {
-            readPropertyMultiple(client, address, objectType, instance, propertyIdentifier, callback)
+            readPropertyMultiple(client, address, objectType, instance, propertyIdentifier, propertyArrayIndex, callback)
         } else {
             callback(err, result)
             if (!isHaveClient) {
@@ -184,7 +201,7 @@ function getObjectParsentValue(client, address, objectType, instance, callback) 
     })
 }
 exports.getObjectParsentValue = getObjectParsentValue;
-var address = { address: '192.168.253.253', net: 1100, adr: [63] }
+//var address = { address: '192.168.253.253', net: 1100, adr: [63] }
 
 //105 80
 // getObjListToTreeData(address, 1, 1, 105, function () {
@@ -192,6 +209,12 @@ var address = { address: '192.168.253.253', net: 1100, adr: [63] }
 // })
 //获取设备 AIAOBIBO..的所有属性
 function getObjListToTreeData(device, objectType, instance, propertyIdentifier, callback) {
+    if (typeof device == 'number') {
+        device += "";
+    }
+    if (typeof device == "string") {
+        device = devicesObj[device];
+    }
     readPropertyMultiple(null, device, objectType, instance, propertyIdentifier, null, function (err, result) {
         //readObjectInfoAll(null, address, instance, objectType, function (err, resData, result) {
         console.log(result)
@@ -407,7 +430,9 @@ function getWhoIsData(adpuTimeout, callback) {
     })
 }
 
+
 function getWhoIsData2(adpuTimeout, callback) {
+    console.log(devicesObj)
     var resData = [];
     var whoIsCount = 2;
     var client = new bacnet({
@@ -433,6 +458,7 @@ function getWhoIsData2(adpuTimeout, callback) {
                 }
             }
         }
+        devicesObj[device.deviceId] = device;
         client.timeSync(device.address, new Date(), true);
         resData.push(device)
     })

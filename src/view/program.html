@@ -31,23 +31,116 @@
   <script>document.write(process.versions.chrome)</script>, and Electron
   <script>document.write(process.versions.electron)</script>. -->
 </body>
+<script src="../js/ext-all.js"></script>
 <script>
-  var iBACnet = require("../app/bacnet");
-  var bacnetutil = require("../app/bacnetutil");
-  var iFile = require("../app/file");
   var url = require("url");
-  var urlparse = url.parse(location.href,true);
+  var urlparse = url.parse(location.href, true);
+  var iBACnet = require("../app/bacnet");
+  //var bacnetutil = require("../app/bacnetutil");
+  var iFile = require("../app/file");
+  var bacnetutil = new Bacnetutil();
+
+
+  function Bacnetutil() {
+    var obj = {}
+    var url = "http://127.0.0.1:" + urlparse.query.serverPort + "/bacnetapi";
+    function getDevicesToTreeData(callback) {
+      Ext.Ajax.request({
+        url: url,
+        method: "get",
+        params: { par: "getDevicesToTreeData" },
+        success: function (response) {
+          try {
+            var data = Ext.decode(response.responseText);
+            console.log(data);
+            if (callback) {
+              callback(null, data);
+            }
+          } catch (err) {
+            if (callback) {
+              callback(err, null);
+            }
+          }
+        }
+      })
+    }
+    function getObjectsToTreeData(device, propertyIdentifier, callback) {
+      Ext.Ajax.request({
+        url: url,
+        method: "get",
+        params: { par: "getObjectsToTreeData", device: device.deviceId, propertyIdentifier: propertyIdentifier },
+        success: function (response) {
+          try {
+            var data = Ext.decode(response.responseText);
+            console.log(data);
+            if (callback) {
+              callback(null, data);
+            }
+          } catch (err) {
+            if (callback) {
+              callback(err, null);
+            }
+          }
+        }
+      })
+    }
+    function getObjListToTreeData(device, objectType, instance, propertyIdentifier, callback) {
+      Ext.Ajax.request({
+        url: url,
+        method: "get",
+        params: { par: "getObjListToTreeData", device: device.deviceId,objectType:objectType,instance:instance, propertyIdentifier: propertyIdentifier },
+        success: function (response) {
+          try {
+            var data = Ext.decode(response.responseText);
+            console.log(data);
+            if (callback) {
+              callback(null, data);
+            }
+          } catch (err) {
+            if (callback) {
+              callback(err, null);
+            }
+          }
+        }
+      })
+    }
+    function getObjectParsentValue(client, address, objectType, instance, callback) {
+      console.log(arguments)
+      Ext.Ajax.request({
+        url: url,
+        method: "get",
+        params: { par: "getObjectsToTreeData", address: address, objectType: objectType, instance: instance },
+        success: function (response) {
+          try {
+            var data = Ext.decode(response.responseText);
+            console.log(data);
+            if (callback) {
+              callback(null, data);
+            }
+          } catch (err) {
+            if (callback) {
+              callback(err, null);
+            }
+          }
+        }
+      })
+    }
+    this.getObjectParsentValue = getObjectParsentValue;
+    this.getObjListToTreeData = getObjListToTreeData
+    this.getDevicesToTreeData = getDevicesToTreeData;
+    this.getObjectsToTreeData = getObjectsToTreeData;
+  }
   //openIframeSrc("http://192.168.31.188/program?a=" + Math.random()+"#nopassword", function (page) {
   openIframeSrc("http://127.0.0.1:" + urlparse.query.serverPort + "/program#nopassword?a=" + Math.random(), function (page) {
-      const bacnetInterface = {
-        iBACnet: iBACnet,
-        bacnetutil: bacnetutil,
-        iFile: iFile
-      }
-      frames[0].bacnetInterface = bacnetInterface;
-    })
+    const bacnetInterface = {
+      iBACnet: iBACnet,
+      bacnetutil: bacnetutil,
+      iFile: iFile
+    }
+    frames[0].bacnetInterface = bacnetInterface;
+  })
   // server.appRun(function (port) {
-    
+
   // })
 
 

@@ -42,7 +42,7 @@
       "i1000.js"
     ],
     "extraResources": [
-      "WWW/redis-server.exe",
+      "WWW/redis-server.exe"
     ],
     "extraFiles":[
     ],

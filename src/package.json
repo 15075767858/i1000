@@ -1,8 +1,8 @@
 {
-  "name": "drive",
-  "version": "1.0.8",
-  "description": "bacnet drive",
-  "main": "drive.js",
+  "name": "programedit",
+  "version": "1.1.3",
+  "description": "program",
+  "main": "program.js",
   "scripts": {
     "test": "electron .",
     "build": "build --win --ia32"
@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "auto-launch": "^5.0.5",
     "cap": "^0.1.2",
     "dateformat": "^3.0.2",
     "express": "^4.16.2",
@@ -18,35 +17,28 @@
     "fs-extra": "^5.0.0",
     "jsonfile": "^4.0.0",
     "moment": "^2.19.4",
-    "node-windows": "^0.1.14",
     "redis": "^2.8.0",
     "url-parse": "^1.2.0",
     "xml2js": "^0.4.19"
   },
-  "devDependencies": {
-    "electron": "^1.7.10"
+  "devDependencies":{
+    "electron": "^1.7.10"    
   },
   "build": {
-    "productName": "drive",
-    "appId": "drive.smartio.cc",
+    "productName": "programedit",
+    "appId": "programedit.smartio.cc",
     "directories": {
       "output": "build"
     },
     "files": [
       "app",
-      "assets",
+      "assts",
       "node_modules",
       "view",
-      "js",
-      "view",
-      "styles",
-      "drive.js"
+      "program.js"
     ],
     "extraResources": [
-      "WWW/redis-server.exe"
-    ],
-    "extraFiles":[
-      "drive"
+      "WWW"
     ],
     "dmg": {
       "contents": [
@@ -67,7 +59,7 @@
       "icon": "build/icons/icon.icns"
     },
     "win": {
-      "icon": "assets/drive.ico"
+      "icon": "assets/program.ico"
     },
     "linux": {
       "icon": "build/icons"
